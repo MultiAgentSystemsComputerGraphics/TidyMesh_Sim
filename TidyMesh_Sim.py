@@ -780,15 +780,15 @@ class CityWasteModel(ap.Model):
 
 DEFAULT_PARAMS = {
     # Grid/world
-    "width": 20,
-    "height": 14,
+    "width": 10,
+    "height": 10,
     "steps": 3600,  # Increased for 6-minute simulation (3600 steps)
 
     # Entities - Adjust number of bins here
-    "n_trucks": 5,
-    "n_bins": 20,    # Increased from 6 to 20 bins for more work
-    "n_tlights": 10,  # Fewer traffic lights 
-    "n_obstacles": 15, # Fewer obstacles
+    "n_trucks": 3,
+    "n_bins": 15,    # Increased from 6 to 15 bins for more work
+    "n_tlights": 5,  # Fewer traffic lights 
+    "n_obstacles": 10, # Fewer obstacles
 
     # Placements
     "depot_pos": (1, 1),
