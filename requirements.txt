@@ -1,0 +1,6 @@
+agentpy
+numpy
+pandas
+matplotlib
+seaborn
+pillow
