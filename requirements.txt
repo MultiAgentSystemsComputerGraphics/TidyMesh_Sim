@@ -4,3 +4,6 @@ pandas
 matplotlib
 seaborn
 pillow
+flask
+flask-cors
+requests
