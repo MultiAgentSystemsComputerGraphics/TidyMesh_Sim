@@ -82,8 +82,8 @@ class TidyMeshVisualizer:
         ax.set_title("Grid Layout - Final State")
         
         # Set grid boundaries
-        ax.set_xlim(-1, 21)
-        ax.set_ylim(-1, 15)
+        ax.set_xlim(-10, 510)    # Match the new grid width (500)
+        ax.set_ylim(-10, 410)    # Match the new grid height (400)
         ax.set_aspect('equal')
         ax.grid(True, alpha=0.3)
         
@@ -218,8 +218,8 @@ class TidyMeshVisualizer:
                 # Get current step data
                 step_data = self.history['steps'][frame]
                 
-                ax.set_xlim(-1, 21)
-                ax.set_ylim(-1, 15)
+                ax.set_xlim(-10, 510)    # Match the new grid width (500)
+                ax.set_ylim(-10, 410)    # Match the new grid height (400)
                 ax.set_aspect('equal')
                 ax.grid(True, alpha=0.3)
                 ax.set_title(f"TidyMesh Simulation - Tick {step_data['tick']}")
