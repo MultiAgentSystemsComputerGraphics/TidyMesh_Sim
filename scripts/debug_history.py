@@ -1,5 +1,27 @@
-# debug_history.py
-# Debug script to check history data and test animation
+#   /$$$$$$$$ /$$       /$$           /$$      /$$                     /$$      
+#  |__  $$__/|__/      | $$          | $$$    /$$$                    | $$      
+#     | $$    /$$  /$$$$$$$ /$$   /$$| $$$$  /$$$$  /$$$$$$   /$$$$$$$| $$$$$$$ 
+#     | $$   | $$ /$$__  $$| $$  | $$| $$ $$/$$ $$ /$$__  $$ /$$_____/| $$__  $$
+#     | $$   | $$| $$  | $$| $$  | $$| $$  $$$| $$| $$$$$$$$|  $$$$$$ | $$  \ $$
+#     | $$   | $$| $$  | $$| $$  | $$| $$\  $ | $$| $$_____/ \____  $$| $$  | $$
+#     | $$   | $$|  $$$$$$$|  $$$$$$$| $$ \/  | $$|  $$$$$$$ /$$$$$$$/| $$  | $$
+#     |__/   |__/ \_______/ \____  $$|__/     |__/ \_______/|_______/ |__/  |__/
+#                           /$$  | $$                                           
+#                          |  $$$$$$/                                           
+#                           \______/                                            
+
+# DEBUGGING SCRIPT
+# For NDS Cognitive Labs Mexico
+
+# By: 
+# Santiago Quintana Moreno      A01571222
+# Sergio Rodríguez Pérez        A00838856
+# Rodrigo González de la Garza  A00838952
+# Diego Gaitan Sanchez          A01285960
+# Miguel Ángel Álvarez Hermida  A01722925
+
+# COPYRIGHT 2025 TIDYMESH INC. ALL RIGHTS RESERVED. 2025 
+
 
 import json
 from collections import Counter
