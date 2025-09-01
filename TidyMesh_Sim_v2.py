@@ -1,12 +1,26 @@
-# mas_waste_qlearning_agentpy.py
-# Multi-Agent Waste Collection with Contract Net + Q-Learning (AgentPy)
-# Author: You (Santiago & team)
-# Notes:
-# - MAS runs in discrete ticks (Unity can render continuous motion from JSON snapshots).
-# - Negotiation: Dispatcher issues CFP, trucks PROPOSE, Dispatcher AWARDs (Contract Net).
-# - Trucks learn navigation/operations via Q-Learning.
-# - Writes final JSON with static IDs and (x,z) positions.
-# - Prints ETA during sim and final KPIs at the end.
+#   /$$$$$$$$ /$$       /$$           /$$      /$$                     /$$      
+#  |__  $$__/|__/      | $$          | $$$    /$$$                    | $$      
+#     | $$    /$$  /$$$$$$$ /$$   /$$| $$$$  /$$$$  /$$$$$$   /$$$$$$$| $$$$$$$ 
+#     | $$   | $$ /$$__  $$| $$  | $$| $$ $$/$$ $$ /$$__  $$ /$$_____/| $$__  $$
+#     | $$   | $$| $$  | $$| $$  | $$| $$  $$$| $$| $$$$$$$$|  $$$$$$ | $$  \ $$
+#     | $$   | $$| $$  | $$| $$  | $$| $$\  $ | $$| $$_____/ \____  $$| $$  | $$
+#     | $$   | $$|  $$$$$$$|  $$$$$$$| $$ \/  | $$|  $$$$$$$ /$$$$$$$/| $$  | $$
+#     |__/   |__/ \_______/ \____  $$|__/     |__/ \_______/|_______/ |__/  |__/
+#                           /$$  | $$                                           
+#                          |  $$$$$$/                                           
+#                           \______/                                            
+
+# TIDYMESH SIMULATION - Garbage collection system
+# For NDS Cognitive Labs Mexico
+
+# By: 
+# Santiago Quintana Moreno      A01571222
+# Sergio Rodríguez Pérez        A00838856
+# Rodrigo González de la Garza  A00838952
+# Diego Gaitan Sanchez          A01285960
+# Miguel Ángel Álvarez Hermida  A01722925
+
+# COPYRIGHT 2025 TIDYMESH INC. ALL RIGHTS RESERVED. 2025 
 
 import agentpy as ap
 import numpy as np

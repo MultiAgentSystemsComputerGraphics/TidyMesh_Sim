@@ -1,6 +1,27 @@
-# visualizer.py
-# Comprehensive visualization system for TidyMesh_Sim
-# Includes real-time animation, post-processing analytics, and Q-learning graphs
+#   /$$$$$$$$ /$$       /$$           /$$      /$$                     /$$      
+#  |__  $$__/|__/      | $$          | $$$    /$$$                    | $$      
+#     | $$    /$$  /$$$$$$$ /$$   /$$| $$$$  /$$$$  /$$$$$$   /$$$$$$$| $$$$$$$ 
+#     | $$   | $$ /$$__  $$| $$  | $$| $$ $$/$$ $$ /$$__  $$ /$$_____/| $$__  $$
+#     | $$   | $$| $$  | $$| $$  | $$| $$  $$$| $$| $$$$$$$$|  $$$$$$ | $$  \ $$
+#     | $$   | $$| $$  | $$| $$  | $$| $$\  $ | $$| $$_____/ \____  $$| $$  | $$
+#     | $$   | $$|  $$$$$$$|  $$$$$$$| $$ \/  | $$|  $$$$$$$ /$$$$$$$/| $$  | $$
+#     |__/   |__/ \_______/ \____  $$|__/     |__/ \_______/|_______/ |__/  |__/
+#                           /$$  | $$                                           
+#                          |  $$$$$$/                                           
+#                           \______/                                            
+
+# TIDYMESH SIM VISUALIZER
+# For NDS Cognitive Labs Mexico
+
+# By: 
+# Santiago Quintana Moreno      A01571222
+# Sergio Rodríguez Pérez        A00838856
+# Rodrigo González de la Garza  A00838952
+# Diego Gaitan Sanchez          A01285960
+# Miguel Ángel Álvarez Hermida  A01722925
+
+# COPYRIGHT 2025 TIDYMESH INC. ALL RIGHTS RESERVED. 2025 
+
 
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend
