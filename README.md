@@ -252,6 +252,46 @@ pip install -r requirements.txt
 5. **✅ Working Visualizations**: Fixed coordinate system and animated GIF
 6. **✅ Zero Error Operation**: Eliminated all coordinate warnings and bounds issues
 
+## 🌐 **Unity Integration & API Server**
+
+### **🚀 Quick Start API Server**
+
+```bash
+# Start the API server for Unity integration
+cd scripts
+python tidymesh_api_server.py
+```
+
+The server will start on `http://localhost:5000` with comprehensive logging and status information.
+
+### **🔗 API Endpoints**
+
+| Endpoint | Method | Purpose | Unity Usage |
+|----------|--------|---------|-------------|
+| `/` | GET | API documentation | Server info |
+| `/health` | GET | Health check | System status |
+| `/status` | GET | Server status | File status |
+| `/TidyMesh/Sim/v2/mas_final_state.json` | GET/POST | Final simulation state | Agent positions, stats |
+| `/TidyMesh/Sim/v2/simulation_history.json` | GET/POST | Complete simulation history | Step-by-step animation |
+
+### **🎮 Unity Integration Features**
+
+- **✅ CORS Enabled:** Full Unity WebGL support
+- **✅ JSON Format:** Direct Unity JsonUtility compatibility
+- **✅ Real-Time Data:** Live simulation data access
+- **✅ Caching:** Improved performance with file modification checking
+- **✅ Error Handling:** Comprehensive error messages and status codes
+
+### **📊 Enhanced Multi-Layered Q-Learning Support**
+
+The API provides access to:
+- **3 Specialized Q-Tables:** Navigation, Exploration, Emergency
+- **12-Dimensional State Space:** Comprehensive environmental awareness
+- **Zero Coordinate Errors:** Perfect JSON-to-grid transformation
+- **Performance Metrics:** Real-time bin completion tracking
+
+**Complete Unity Integration Guide:** [`documentation/TidyMesh_API_Unity_Guide.md`](documentation/TidyMesh_API_Unity_Guide.md)
+
 ## 📝 **License**
 
 Academic project for Multi-Agent Computer Graphics course.
