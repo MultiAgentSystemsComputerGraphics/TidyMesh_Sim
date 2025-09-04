@@ -4,8 +4,8 @@
 #     | $$   | $$ /$$__  $$| $$  | $$| $$ $$/$$ $$ /$$__  $$ /$$_____/| $$__  $$
 #     | $$   | $$| $$  | $$| $$  | $$| $$  $$$| $$| $$$$$$$$|  $$$$$$ | $$  \ $$
 #     | $$   | $$| $$  | $$| $$  | $$| $$\  $ | $$| $$_____/ \____  $$| $$  | $$
-#     | $$   | $$|  $$$$$$$|  $$$$$$$| $$ \/  | $$|  $$$$$$$ /$$$$$$$/| $$  | $$    v2
-#     |__/   |__/ \_______/ \____  $$|__/     |__/ \_______/|_______/ |__/  |__/
+#     | $$   | $$|  $$$$$$$|  $$$$$$$| $$ \/  | $$|  $$$$$$$ /$$$$$$$/| $$  | $$
+#     |__/   |__/ \_______/ \____  $$|__/     |__/ \_______/|_______/ |__/  |__/   v3
 #                           /$$  | $$                                           
 #                          |  $$$$$$/                                           
 #                           \______/                                            
@@ -822,6 +822,17 @@ class CityWasteModel(ap.Model):
             lane_data = json.load(f)
 
         self.spawn_points = self._extract_lane_spawns(lane_data["roads"])
+        # Nuevo: guardar mapeo grid_pos -> (json_x, json_z, rot_y)
+        self.spawn_grid_to_json = {}
+        for road in lane_data["roads"]:
+            for lane in road["lanes"]:
+                json_x1, json_z1 = lane["start_x"], lane["start_z"]
+                json_x2, json_z2 = lane["end_x"], lane["end_z"]
+                json_mid_x = (json_x1 + json_x2) / 2
+                json_mid_z = (json_z1 + json_z2) / 2
+                grid_x, grid_z = transform_coordinates(json_mid_x, json_mid_z, self.p.coord_offset_x, self.p.coord_offset_z)
+                rot_y = lane.get("rot_y", 0)
+                self.spawn_grid_to_json[(grid_x, grid_z)] = (json_mid_x, json_mid_z, rot_y)
         
         # Ensure we have enough spawn points, add random ones if needed
         if len(self.spawn_points) < self.p.n_trucks:
@@ -857,6 +868,7 @@ class CityWasteModel(ap.Model):
             json_x, json_z = int(z["center_x"]), int(z["center_z"])
             grid_x, grid_z = transform_coordinates(json_x, json_z, self.p.coord_offset_x, self.p.coord_offset_z)
             
+            
             # Verificar que esté dentro de los límites
             if is_valid_grid_position(grid_x, grid_z, self.p.width, self.p.height):
                 zone_positions.append((grid_x, grid_z))
@@ -865,6 +877,7 @@ class CityWasteModel(ap.Model):
                 rand_x = random.randint(10, self.p.width - 10)
                 rand_z = random.randint(10, self.p.height - 10)
                 zone_positions.append((rand_x, rand_z))
+            
 
         # Aleatorizamos los espacios
         random.shuffle(zone_positions)
@@ -917,7 +930,7 @@ class CityWasteModel(ap.Model):
             b.notify_ready()
 
         # Traffic lights
-# === Cargar JSON de traffic lights ===
+        # === Cargar JSON de traffic lights ===
         with open("config_Sim/trafficLights.json", "r") as f:
             tl_data = json.load(f)
 
@@ -1186,14 +1199,16 @@ class CityWasteModel(ap.Model):
         )
         
         for agent in all_agents:
-            # Use the entity_type attribute instead of class name
             agent_type = getattr(agent, 'entity_type', 'unknown')
-            
+            # Remover offset antes de exportar para Unity
+            json_x = agent.pos[0] - self.p.coord_offset_x
+            json_z = agent.pos[1] - self.p.coord_offset_z
+
             agent_data = {
                 "id": agent.static_id,
                 "type": agent_type,
-                "x": agent.pos[0],
-                "z": agent.pos[1]
+                "x": json_x,
+                "z": json_z
             }
             
             # Add specific data based on agent type
@@ -1237,16 +1252,46 @@ class CityWasteModel(ap.Model):
             "agents": []
         }
 
+        def find_nearest_spawn(x, z):
+            # Busca el spawn más cercano en grid
+            min_dist = float('inf')
+            best = None
+            for (gx, gz), (jx, jz, rot_y) in self.spawn_grid_to_json.items():
+                dist = abs(gx - x) + abs(gz - z)
+                if dist < min_dist:
+                    min_dist = dist
+                    best = (jx, jz, rot_y)
+            return best
+
         def add_agent(agent_obj):
             x, z = agent_obj.pos_xz()
-            agent_data = {
-                "id": agent_obj.static_id,
-                "type": agent_obj.entity_type,
-                "label": getattr(agent_obj, "label", agent_obj.entity_type),
-                "x": x,
-                "z": z
-            }
-            
+            # Solo para trucks y obstacles
+            if agent_obj.entity_type in ("truck", "obstacle"):
+                # Si está en un spawn válido, usa la posición y ángulo originales
+                if (x, z) in self.spawn_grid_to_json:
+                    json_x, json_z, rot_y = self.spawn_grid_to_json[(x, z)]
+                else:
+                    # Busca el spawn más cercano
+                    json_x, json_z, rot_y = find_nearest_spawn(x, z)
+                agent_data = {
+                    "id": agent_obj.static_id,
+                    "type": agent_obj.entity_type,
+                    "label": getattr(agent_obj, "label", agent_obj.entity_type),
+                    "x": json_x,
+                    "z": json_z,
+                    "rotation_y": rot_y
+                }
+            else:
+                # Para otros agentes, solo resta el offset
+                json_x = x - self.p.coord_offset_x
+                json_z = z - self.p.coord_offset_z
+                agent_data = {
+                    "id": agent_obj.static_id,
+                    "type": agent_obj.entity_type,
+                    "label": getattr(agent_obj, "label", agent_obj.entity_type),
+                    "x": json_x,
+                    "z": json_z
+                }
             # Add type-specific state information
             if hasattr(agent_obj, 'state'):
                 agent_data["state"] = agent_obj.state
@@ -1333,7 +1378,7 @@ DEFAULT_PARAMS = {
 
     # Entities - MORE BINS FOR BETTER PERFORMANCE
     "n_trucks": 5,
-    "n_bins": 40,    # DOUBLED from 20 to 40 bins for more opportunities
+    "n_bins": 10,    # DOUBLED from 20 to 40 bins for more opportunities
     "n_tlights": 5,  # Fewer traffic lights to reduce obstacles
     "n_obstacles": 5, # Minimal obstacles
 
