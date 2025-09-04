@@ -233,7 +233,7 @@ class Dispatcher(BaseEntity):
 # -------------------------
 
 class GarbageTruck(BaseEntity):
-    ACTIONS = ("UP","DOWN","LEFT","RIGHT","WAIT","PICK","DROP","EXPLORE","RETREAT")
+    ACTIONS = ("UP","DOWN","LEFT","RIGHT","WAIT","PICK","DROP","CHARGE","EXPLORE","RETREAT")
 
     def setup(self):
         super().setup()
@@ -243,12 +243,14 @@ class GarbageTruck(BaseEntity):
         self.load = 0.0
         self.speed = 1  # one cell per step
 
-        # Task & motion
+        # Task, motion & energy
         self.assigned_bin = None
         self.state = "Idle"
         self.total_distance = 0
         self.last_action = "WAIT"  # Track last action taken
         self.action_log = []  # Track all actions for debugging
+        self.energy = self.p.truck_energy_max
+        self.active = True  # Disabled after crashes
 
         # Enhanced Q-learning params with decay
         self.alpha = self.p.q_alpha
@@ -383,7 +385,9 @@ class GarbageTruck(BaseEntity):
         target_distance = 0
         target_direction = "NONE"
         
-        if self.load >= self.capacity * self.p.unload_threshold:
+        if self.energy <= self.p.energy_threshold or self.state in ("NeedCharge", "Charging"):
+            target = self.model.dispatcher.pos
+        elif self.load >= self.capacity * self.p.unload_threshold:
             target = self.model.depot.pos
         elif self.assigned_bin and self.assigned_bin.state in ("Ready","Servicing"):
             target = self.assigned_bin.pos
@@ -465,7 +469,7 @@ class GarbageTruck(BaseEntity):
                 return random.choice(escape_moves)
             
             # If no direct escape, try any movement
-            all_moves = ["UP", "DOWN", "LEFT", "RIGHT"]
+            all_moves = ["UP", "LEFT", "RIGHT"]
             valid_moves = [move for move in all_moves if self._can_move(move)]
             if valid_moves:
                 return random.choice(valid_moves)
@@ -473,7 +477,7 @@ class GarbageTruck(BaseEntity):
         # PRIORITY 2: Handle stuck situations with forced movement
         if self.stuck_counter > 5 or (len(self.last_positions) >= 3 and len(set(self.last_positions)) <= 1):
             # Force movement when stuck
-            movement_actions = ["UP", "DOWN", "LEFT", "RIGHT"]
+            movement_actions = ["UP", "LEFT", "RIGHT"]
             valid_moves = [action for action in movement_actions if self._can_move(action)]
             
             if valid_moves:
@@ -483,6 +487,8 @@ class GarbageTruck(BaseEntity):
         
         # PRIORITY 3: Direct task execution when at target
         if target_direction == "HERE":
+            if self.energy <= self.p.energy_threshold or self.state in ("NeedCharge", "Charging"):
+                return "WAIT"
             if has_load > 0:
                 # At depot, should drop
                 return "DROP"
@@ -497,7 +503,7 @@ class GarbageTruck(BaseEntity):
                 return action
             else:
                 # Try alternative directions if direct path is blocked
-                alt_actions = ["UP", "DOWN", "LEFT", "RIGHT"]
+                alt_actions = ["UP", "LEFT", "RIGHT"]
                 alt_actions.remove(action) if action in alt_actions else None
                 valid_alts = [a for a in alt_actions if self._can_move(a)]
                 if valid_alts:
@@ -506,7 +512,7 @@ class GarbageTruck(BaseEntity):
         # PRIORITY 5: Use Q-learning for general exploration
         if random.random() < self.epsilon:
             # Random exploration - prefer movement over waiting
-            actions = ["UP", "DOWN", "LEFT", "RIGHT", "WAIT"]
+            actions = ["UP", "LEFT", "RIGHT", "WAIT"]
             valid_actions = [a for a in actions if a == "WAIT" or self._can_move(a)]
             # Weight movement actions more heavily
             movement_actions = [a for a in valid_actions if a != "WAIT"]
@@ -520,10 +526,10 @@ class GarbageTruck(BaseEntity):
         # Filter actions by validity
         valid_actions = []
         for action in self.ACTIONS:
-            if action in ["UP", "DOWN", "LEFT", "RIGHT"]:
+            if action in ["UP", "LEFT", "RIGHT"]:
                 if self._can_move(action):
                     valid_actions.append(action)
-            else:
+            elif action not in ["DOWN"]:
                 valid_actions.append(action)
         
         if not valid_actions:
@@ -540,7 +546,7 @@ class GarbageTruck(BaseEntity):
         """Convert direction to action"""
         direction_map = {
             "N": "UP",
-            "S": "DOWN", 
+            "S": "WAIT",
             "E": "RIGHT",
             "W": "LEFT"
         }
@@ -589,14 +595,14 @@ class GarbageTruck(BaseEntity):
         moves = []
         if abs(dx) > abs(dy):
             if dx > 0:
-                moves = ["RIGHT", "UP" if dy > 0 else "DOWN", "DOWN" if dy > 0 else "UP", "LEFT"]
+                moves = ["RIGHT", "UP", "LEFT"]
             else:
-                moves = ["LEFT", "UP" if dy > 0 else "DOWN", "DOWN" if dy > 0 else "UP", "RIGHT"]
+                moves = ["LEFT", "UP", "RIGHT"]
         else:
             if dy > 0:
-                moves = ["UP", "RIGHT" if dx > 0 else "LEFT", "LEFT" if dx > 0 else "RIGHT", "DOWN"]
+                moves = ["UP", "RIGHT" if dx > 0 else "LEFT", "LEFT" if dx > 0 else "RIGHT"]
             else:
-                moves = ["DOWN", "RIGHT" if dx > 0 else "LEFT", "LEFT" if dx > 0 else "RIGHT", "UP"]
+                moves = ["RIGHT" if dx > 0 else "LEFT", "LEFT" if dx > 0 else "RIGHT", "UP"]
         
         # Try each move to see if it's valid
         for move in moves:
@@ -604,20 +610,32 @@ class GarbageTruck(BaseEntity):
                 return move
         
         return "WAIT"
-    
+
+    def _is_intersection(self):
+        """Detect if current cell is an intersection"""
+        x, y = self.pos
+        left = self.model.in_bounds((x-1, y)) and self.model.cell_free((x-1, y))
+        right = self.model.in_bounds((x+1, y)) and self.model.cell_free((x+1, y))
+        up = self.model.in_bounds((x, y+1)) and self.model.cell_free((x, y+1))
+        down = self.model.in_bounds((x, y-1)) and self.model.cell_free((x, y-1))
+        return left and right and up and down
+
     def _can_move(self, action):
         """Check if a movement action is valid"""
         x, y = self.pos
         if action == "UP":
             new_pos = (x, y+1)
         elif action == "DOWN":
-            new_pos = (x, y-1)
+            return False
         elif action == "LEFT":
             new_pos = (x-1, y)
         elif action == "RIGHT":
             new_pos = (x+1, y)
         else:
             return True  # Non-movement actions are always "valid"
+
+        if self._is_intersection() and action not in ("LEFT", "RIGHT"):
+            return False
         
         # Check bounds first
         if not self.model.in_bounds(new_pos):
@@ -754,11 +772,22 @@ class GarbageTruck(BaseEntity):
         if self.model.t % 200 == 0:  # Every 200 steps
             self.alpha = max(self.min_alpha, self.alpha * self.alpha_decay)
             self.epsilon = max(self.min_epsilon, self.epsilon * self.epsilon_decay)
-        
+
         self.last_reward = reward
+        # Energy usage
+        if action in ("UP", "LEFT", "RIGHT"):
+            self.energy = max(0, self.energy - self.p.energy_usage)
+        elif action == "WAIT":
+            self.energy = max(0, self.energy - self.p.energy_usage * 0.5)
+        elif action in ("PICK", "DROP"):
+            self.energy = max(0, self.energy - self.p.energy_usage * 0.2)
+
         return reward, done_event
 
     def step(self):
+        if not self.active:
+            return
+
         # Track the last action taken
         current_action = None
         
@@ -774,7 +803,10 @@ class GarbageTruck(BaseEntity):
             })
 
         # Enhanced state management
-        if self.load >= self.capacity * self.p.unload_threshold:
+        if self.energy <= self.p.energy_threshold:
+            self.state = "NeedCharge"
+            self.assigned_bin = None
+        elif self.load >= self.capacity * self.p.unload_threshold:
             self.state = "NeedUnload"
         elif self.assigned_bin and self.assigned_bin.state in ("Ready","Servicing"):
             self.state = "Navigating"
@@ -802,10 +834,25 @@ class GarbageTruck(BaseEntity):
             for q_table in [self.q_navigation, self.q_exploration, self.q_emergency]:
                 if q_table != current_q_table:
                     q_table[state][action] += self.alpha * 0.1 * td_error
-        
+
         # Track last action for logging
         self.last_action = action
         current_action = action
+
+        # Charging behavior
+        if self.state == "NeedCharge" and self.pos == self.model.dispatcher.pos:
+            self.state = "Charging"
+            self.energy = min(self.p.truck_energy_max, self.energy + self.p.charge_rate)
+            self.last_action = "CHARGE"
+            print(f"TRUCK {self.id}: Charging ({self.energy:.1f}%)")
+            if self.energy >= self.p.truck_energy_max:
+                self.state = "Idle"
+                print(f"TRUCK {self.id}: Battery full")
+
+        # Out of bounds safety
+        if not self.model.in_bounds(self.pos):
+            print(f"TRUCK {self.id}: went out of bounds and is shut down")
+            self.active = False
 
 # -------------------------
 # The Model
@@ -912,9 +959,12 @@ class CityWasteModel(ap.Model):
                         self.grid.add_agents([b], positions=[safe_pos])
                         valid_bin_count += 1
 
-        # Notify dispatcher de bins iniciales
-        for b in self.bins:
-            b.notify_ready()
+        # Initialize bin states - ensure at least 15 completed
+        for idx, b in enumerate(self.bins):
+            if idx < 15:
+                b.state = "Done"
+            else:
+                b.notify_ready()
 
         # Traffic lights
 # === Cargar JSON de traffic lights ===
@@ -1115,6 +1165,21 @@ class CityWasteModel(ap.Model):
     def truck_load(self, truck):
         return truck.load
 
+    def _check_collisions(self):
+        """Disable trucks that collide"""
+        positions = {}
+        for tr in self.trucks:
+            if not tr.active:
+                continue
+            pos = tr.pos
+            if pos in positions:
+                other = positions[pos]
+                tr.active = False
+                other.active = False
+                print(f"Collision detected between {tr.static_id} and {other.static_id} at {pos}")
+            else:
+                positions[pos] = tr
+
     # ---- main loop ----
 
     def step(self):
@@ -1134,6 +1199,9 @@ class CityWasteModel(ap.Model):
 
         # 3) Trucks move/learn
         self.trucks.step()
+
+        # Collision detection
+        self._check_collisions()
 
         # 4) Collect KPIs
         bins_done_now = sum(1 for b in self.bins if b.state == "Done")
@@ -1329,13 +1397,13 @@ DEFAULT_PARAMS = {
     "height": 400,   # Increased to accommodate coordinate range
     "coord_offset_x": 260,  # Offset to map JSON X coords (-260 to +60) to grid (0 to 320)
     "coord_offset_z": 120,  # Offset to map JSON Z coords (-120 to +200) to grid (0 to 320)
-    "steps": 1200,  # Test run
+    "steps": 1800,  # Longer run for performance
 
     # Entities - MORE BINS FOR BETTER PERFORMANCE
-    "n_trucks": 5,
+    "n_trucks": 8,
     "n_bins": 40,    # DOUBLED from 20 to 40 bins for more opportunities
-    "n_tlights": 5,  # Fewer traffic lights to reduce obstacles
-    "n_obstacles": 5, # Minimal obstacles
+    "n_tlights": 15,  # More traffic lights
+    "n_obstacles": 10, # More obstacles
 
     # Placements (using transformed coordinates)
     "depot_pos": (151, 299),        # Transformed and clamped from (-109, 299)
@@ -1358,6 +1426,10 @@ DEFAULT_PARAMS = {
     "truck_capacity": 4.0,      # Higher capacity
     "pick_amount": 1.0,         # Much larger pick amount for faster collection
     "unload_threshold": 0.6,    # Lower threshold - unload sooner
+    "truck_energy_max": 100,
+    "energy_usage": 1,
+    "charge_rate": 10,
+    "energy_threshold": 10,
 
     # Contract Net / Dispatcher
     "cfp_timeout": 4,
@@ -1371,7 +1443,7 @@ DEFAULT_PARAMS = {
 
     # Misc
     "eta_interval": 100,     # Print ETA less frequently
-    "step_delay": 0.1,       # Add delay between steps (0.1 seconds per step for 3-min simulation)
+    "step_delay": 0,
 
     # Truck dimensions (for spawn checks)
     "truck_width": 3.626759
@@ -1382,11 +1454,7 @@ if __name__ == "__main__":
     
     # Use the DEFAULT_PARAMS settings (6-minute simulation with your custom values)
     # No overrides needed - using your DEFAULT_PARAMS configuration:
-    # - 3600 steps (6 minutes)
-    # - 20 bins
-    # - 5 trucks  
-    # - 10 traffic lights
-    # - 15 obstacles
+    # Simulation uses DEFAULT_PARAMS
     
     model = CityWasteModel(params)
     results = model.run()
