@@ -241,7 +241,7 @@ class GarbageTruck(BaseEntity):
         # Capabilities
         self.capacity = self.p.truck_capacity
         self.load = 0.0
-        self.speed = 1  # one cell per step
+        self.speed = self.p.truck_speed  # cells per step
 
         # Task, motion & energy
         self.assigned_bin = None
@@ -707,15 +707,27 @@ class GarbageTruck(BaseEntity):
         else:
             self._target_pos = None
 
-        # Execute actions with enhanced logic
+        # Execute actions with enhanced logic (allow multiple moves per step)
         if action == "UP":
-            success = try_move_enhanced(x, y+1)
+            for _ in range(self.speed):
+                x, y = self.pos
+                if not try_move_enhanced(x, y+1):
+                    break
         elif action == "DOWN":
-            success = try_move_enhanced(x, y-1)
+            for _ in range(self.speed):
+                x, y = self.pos
+                if not try_move_enhanced(x, y-1):
+                    break
         elif action == "LEFT":
-            success = try_move_enhanced(x-1, y)
+            for _ in range(self.speed):
+                x, y = self.pos
+                if not try_move_enhanced(x-1, y):
+                    break
         elif action == "RIGHT":
-            success = try_move_enhanced(x+1, y)
+            for _ in range(self.speed):
+                x, y = self.pos
+                if not try_move_enhanced(x+1, y):
+                    break
         elif action == "WAIT":
             # Context-dependent waiting penalties
             if self.is_corner():
@@ -768,15 +780,14 @@ class GarbageTruck(BaseEntity):
             reward -= 5  # Penalty for being stuck in a loop
             self.stuck_counter += 1
         
-        # Update learning parameters with decay (less frequent)
-        if self.model.t % 200 == 0:  # Every 200 steps
-            self.alpha = max(self.min_alpha, self.alpha * self.alpha_decay)
-            self.epsilon = max(self.min_epsilon, self.epsilon * self.epsilon_decay)
+        # Update learning parameters with decay every step
+        self.alpha = max(self.min_alpha, self.alpha * self.alpha_decay)
+        self.epsilon = max(self.min_epsilon, self.epsilon * self.epsilon_decay)
 
         self.last_reward = reward
         # Energy usage
         if action in ("UP", "LEFT", "RIGHT"):
-            self.energy = max(0, self.energy - self.p.energy_usage)
+            self.energy = max(0, self.energy - self.p.energy_usage * self.speed)
         elif action == "WAIT":
             self.energy = max(0, self.energy - self.p.energy_usage * 0.5)
         elif action in ("PICK", "DROP"):
@@ -959,12 +970,9 @@ class CityWasteModel(ap.Model):
                         self.grid.add_agents([b], positions=[safe_pos])
                         valid_bin_count += 1
 
-        # Initialize bin states - ensure at least 15 completed
-        for idx, b in enumerate(self.bins):
-            if idx < 15:
-                b.state = "Done"
-            else:
-                b.notify_ready()
+        # Initialize bin states based on their current fill levels
+        for b in self.bins:
+            b.notify_ready()
 
         # Traffic lights
 # === Cargar JSON de traffic lights ===
@@ -1397,7 +1405,7 @@ DEFAULT_PARAMS = {
     "height": 400,   # Increased to accommodate coordinate range
     "coord_offset_x": 260,  # Offset to map JSON X coords (-260 to +60) to grid (0 to 320)
     "coord_offset_z": 120,  # Offset to map JSON Z coords (-120 to +200) to grid (0 to 320)
-    "steps": 1800,  # Longer run for performance
+    "steps": 3000,  # Extended run for better performance
 
     # Entities - MORE BINS FOR BETTER PERFORMANCE
     "n_trucks": 8,
@@ -1424,6 +1432,7 @@ DEFAULT_PARAMS = {
 
     # Trucks & operations - OPTIMIZED FOR MAXIMUM EFFICIENCY
     "truck_capacity": 4.0,      # Higher capacity
+    "truck_speed": 2,           # Move two cells per step for faster travel
     "pick_amount": 1.0,         # Much larger pick amount for faster collection
     "unload_threshold": 0.6,    # Lower threshold - unload sooner
     "truck_energy_max": 100,

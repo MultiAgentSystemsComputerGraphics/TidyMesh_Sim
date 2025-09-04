@@ -130,9 +130,13 @@ Open the generated documentation files:
 "coord_offset_x": 260,      # JSON coordinate transformation
 "coord_offset_z": 120,      # JSON coordinate transformation
 
+# Simulation
+"steps": 3000,              # Longer runs for deeper learning
+
 # Aggressive Collection Settings
 "n_bins": 40,               # DOUBLED opportunities
 "truck_capacity": 4.0,      # Higher capacity (was 3.0)
+"truck_speed": 2,           # Faster trucks
 "pick_amount": 1.0,         # Faster collection (was 0.5)
 "unload_threshold": 0.6,    # Earlier unload (was 0.8)
 "bin_fill_rate": 0.05,      # Faster bin filling (was 0.02)
