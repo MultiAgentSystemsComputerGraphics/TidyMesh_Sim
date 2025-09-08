@@ -1,27 +1,4 @@
-#   /$$$$$$$$ /$$       /$$           /$$      /$$                     /$$      
-#  |__  $$__/|__/      | $$          | $$$    /$$$                    | $$      
-#     | $$    /$$  /$$$$$$$ /$$   /$$| $$$$  /$$$$  /$$$$$$   /$$$$$$$| $$$$$$$ 
-#     | $$   | $$ /$$__  $$| $$  | $$| $$ $$/$$ $$ /$$__  $$ /$$_____/| $$__  $$
-#     | $$   | $$| $$  | $$| $$  | $$| $$  $$$| $$| $$$$$$$$|  $$$$$$ | $$  \ $$
-#     | $$   | $$| $$  | $$| $$  | $$| $$\  $ | $$| $$_____/ \____  $$| $$  | $$
-#     | $$   | $$|  $$$$$$$|  $$$$$$$| $$ \/  | $$|  $$$$$$$ /$$$$$$$/| $$  | $$
-#     |__/   |__/ \_______/ \____  $$|__/     |__/ \_______/|_______/ |__/  |__/    v3.1
-#                           /$$  | $$                                           
-#                          |  $$$$$$/                                           
-#                           \______/                                            
-
-# TIDYMESH SIMULATION v3
-# For NDS Cognitive Labs Mexico
-
-# By: 
-# Santiago Quintana Moreno      A01571222
-# Sergio Rodríguez Pérez        A00838856
-# Rodrigo González de la Garza  A00838952
-# Diego Gaitan Sanchez          A01285960
-# Miguel Ángel Álvarez Hermida  A01722925
-
-# COPYRIGHT 2025 TIDYMESH INC. ALL RIGHTS RESERVED. 2025 
-
+# TidyMesh_Sim_v3.py — Simulator (grid roads, Q-learning trucks, obstacles, Flask entry)
 import agentpy as ap
 import numpy as np
 import json, math, random, time, os
@@ -161,14 +138,12 @@ class RoadObstacle(Base):
         super().setup(); self.kind = "obstacle"
         self.move_prob = getattr(self.p, "obstacle_move_prob", 0.05)
         self.obey_lights = getattr(self.p, "obstacle_obey_lights", True)
-        self.spawn_angle = 0  # for JSON compatibility
+        self.spawn_angle = 0
     def neighbors(self, cell): return self.model.road_nbrs.get(cell, ())
     def step(self):
-        # optionally wait on red if the cell is a light
         if self.obey_lights and self.model.blocked_by_red(self.pos):
             return
         if random.random() >= self.move_prob: return
-        # try random neighbor that is free
         cand = list(self.neighbors(self.pos))
         random.shuffle(cand)
         for q in cand:
@@ -184,7 +159,7 @@ class Dispatcher(Base):
         super().setup()
         self.kind = "dispatcher"
         self.open = set()
-        self.pending = {}   # bin -> {bids: {truck: cost}, tick: int}
+        self.pending = {}   # bin -> {bids: {truck: cost}, tick}
         self.awarded = {}   # bin -> truck
         self.ledger = defaultdict(int)
 
@@ -315,12 +290,13 @@ class Truck(Base):
         light_block = self.model.blocked_by_red(self.pos)
         moved=False; did_pick=did_drop=did_charge=False; reached=False; action_for_log="WAIT"
 
-        # Act if at target
         if target and self.pos == target:
             reached=True
             if target == depot:
                 if self.load > 0: self.load = 0.0; did_drop=True; action_for_log="DROP"
-                if self.energy < self.p.energy_max: self.energy = clamp(self.energy + self.p.charge_rate, 0, self.p.energy_max); did_charge=True; action_for_log="CHARGE"
+                if self.energy < self.p.energy_max:
+                    self.energy = clamp(self.energy + self.p.charge_rate, 0, self.p.energy_max)
+                    did_charge=True; action_for_log="CHARGE"
             else:
                 b=None
                 if self.assigned and self.assigned.pos == target: b=self.assigned
@@ -337,16 +313,14 @@ class Truck(Base):
                         if self.assigned is b: self.assigned = None
                         self.model.kpis_bins_done += 1; self.collected_bins += 1
 
-        # Move
         next_cell = self.plan_next_step(target)
         if next_cell and not light_block and self.model.cell_free(next_cell):
             if self.energy >= self.p.energy_per_move:
                 self.model.grid.move_to(self, next_cell)
                 self.total_distance += 1; self.energy -= self.p.energy_per_move
-                moved=True; 
+                moved=True
                 if action_for_log == "WAIT": action_for_log="FORWARD"
 
-        # Q-learning update
         learn_now = self.at_intersection() or moved or reached or did_pick or did_drop or did_charge
         if learn_now:
             s = self.q_state(target)
@@ -424,7 +398,7 @@ class CityWasteV2(ap.Model):
         self.bins = ap.AgentList(self, bs)
         for b in self.bins: b.notify_ready()
 
-        # Index bins by position
+        # Index bins by pos (for opportunistic pickup)
         self.bins_by_pos = defaultdict(list)
         for b in self.bins: self.bins_by_pos[b.pos].append(b)
 
@@ -437,20 +411,21 @@ class CityWasteV2(ap.Model):
             trs.append(tr); self.grid.add_agents([tr], positions=[start])
         self.trucks = ap.AgentList(self, trs)
 
-        # Obstacles (spawn on free road cells)
+        # Obstacles
         obs = []
-        start_idx = len(trs)  # avoid overlapping first few road_list cells used by trucks
         used = {self.depot.pos} | {t.pos for t in self.trucks} | {b.pos for b in self.bins}
-        j = 0
+        road_iter = iter(list(self.road_mask))
         for i in range(self.p.n_obstacles):
             o = self._make(RoadObstacle, f"ID_4{str(i+1).zfill(2)}")
-            while j < len(road_list) and road_list[j] in used: j += 1
-            pos = road_list[j % len(road_list)]
-            used.add(pos); j += 1
+            pos = None
+            for c in self.road_mask:
+                if c not in used: pos = c; break
+            if pos is None: pos = next(road_iter, list(self.road_mask)[0])
+            used.add(pos)
             obs.append(o); self.grid.add_agents([o], positions=[pos])
         self.obstacles = ap.AgentList(self, obs)
 
-        # KPIs, occupancy, history
+        # KPIs / occupancy / history
         self.kpis_bins_done = 0
         self._occ = set()
         self.history = {'steps': []}
@@ -463,7 +438,6 @@ class CityWasteV2(ap.Model):
                 super().__init__(model)
         return T(self)
 
-    # Occupancy — trucks, depot, and obstacles block movement
     def cell_free(self, pos):
         return (pos in self.road_mask) and (pos not in self._occ)
 
@@ -521,7 +495,6 @@ class CityWasteV2(ap.Model):
         self.bins.step()
         self.dispatcher.step()
 
-        # Move obstacles then rebuild occupancy so trucks see them
         self.obstacles.step()
         self.rebuild_occupancy()
 
@@ -584,12 +557,12 @@ DEFAULT = {
     "base_path": "config_Sim",
     "width": 500, "height": 400,
     "coord_offset_x": 260, "coord_offset_z": 120,
-    "steps": 5000,
+    "steps": 1200,
 
     "n_trucks": 5, "n_bins": 40, "n_tlights": 10,
-    "n_obstacles": 8,                     
-    "obstacle_move_prob": 0.05,           
-    "obstacle_obey_lights": True,         
+    "n_obstacles": 8,
+    "obstacle_move_prob": 0.05,
+    "obstacle_obey_lights": True,
 
     "depot_pos": (151, 299),
     "dispatcher_pos": (150, 274),
@@ -604,20 +577,48 @@ DEFAULT = {
 
     "tl_cycle": 8, "tl_green": 6,
 
-    # Energy system
     "energy_max": 120.0, "energy_per_move": 1.0,
     "charge_rate": 8.0, "energy_reserve": 10.0, "low_energy": 15.0,
 
-    # Q-learning
     "q_alpha": 0.5, "q_gamma": 0.98, "q_epsilon": 0.08,
 
-    # Dispatcher
     "cfp_timeout": 4,
 
-    # History throttling
     "history_stride": 25,
 }
 
+# ---- Public entry for Flask API ----
+def run_simulation(params_overrides=None):
+    """
+    Accepts dict with: n_trucks, n_bins, n_tlights, n_obstacles, steps (optional),
+    plus any existing keys. Missing/invalid values fall back to DEFAULT.
+    """
+    p = DEFAULT.copy()
+    o = (params_overrides or {})
+
+    def _clamp_int(name, lo, hi):
+        v = o.get(name, p[name])
+        try: v = int(v)
+        except Exception: v = p[name]
+        p[name] = max(lo, min(hi, v))
+
+    _clamp_int("n_trucks", 0, 50)
+    _clamp_int("n_bins", 0, 1000)
+    _clamp_int("n_tlights", 0, 200)
+    _clamp_int("n_obstacles", 0, 200)
+    if "steps" in o:
+        try: p["steps"] = max(10, min(2_000_000, int(o["steps"])))
+        except Exception: pass
+
+    # keep any other provided overrides if they exist in DEFAULT (e.g., road_thickness)
+    for k, v in o.items():
+        if k in p: p[k] = v
+
+    model = CityWasteV2(p)
+    _ = model.run(steps=p["steps"])
+    return True
+
+# ---- CLI fallback ----
 if __name__ == "__main__":
     model = CityWasteV2(DEFAULT)
-    res = model.run(steps=DEFAULT["steps"])
+    _ = model.run(steps=DEFAULT["steps"])
