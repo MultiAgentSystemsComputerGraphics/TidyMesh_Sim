@@ -1,11 +1,26 @@
-# TidyMesh_Sim_v3.py — DROP-IN with ROAD OBSTACLES added
-# - Obstacles move along the road graph (random walk, prob = obstacle_move_prob)
-# - Optionally obey traffic lights when departing a red cell
-# - Obstacles block cells for trucks
-# - Keeps: road_thickness, opportunistic pickup, fallback award
-# - Outputs unchanged:
-#     results/simulation_data/mas_final_state.json
-#     results/simulation_data/simulation_history.json
+#   /$$$$$$$$ /$$       /$$           /$$      /$$                     /$$      
+#  |__  $$__/|__/      | $$          | $$$    /$$$                    | $$      
+#     | $$    /$$  /$$$$$$$ /$$   /$$| $$$$  /$$$$  /$$$$$$   /$$$$$$$| $$$$$$$ 
+#     | $$   | $$ /$$__  $$| $$  | $$| $$ $$/$$ $$ /$$__  $$ /$$_____/| $$__  $$
+#     | $$   | $$| $$  | $$| $$  | $$| $$  $$$| $$| $$$$$$$$|  $$$$$$ | $$  \ $$
+#     | $$   | $$| $$  | $$| $$  | $$| $$\  $ | $$| $$_____/ \____  $$| $$  | $$
+#     | $$   | $$|  $$$$$$$|  $$$$$$$| $$ \/  | $$|  $$$$$$$ /$$$$$$$/| $$  | $$
+#     |__/   |__/ \_______/ \____  $$|__/     |__/ \_______/|_______/ |__/  |__/    v3
+#                           /$$  | $$                                           
+#                          |  $$$$$$/                                           
+#                           \______/                                            
+
+# TIDYMESH SIMULATION v3
+# For NDS Cognitive Labs Mexico
+
+# By: 
+# Santiago Quintana Moreno      A01571222
+# Sergio Rodríguez Pérez        A00838856
+# Rodrigo González de la Garza  A00838952
+# Diego Gaitan Sanchez          A01285960
+# Miguel Ángel Álvarez Hermida  A01722925
+
+# COPYRIGHT 2025 TIDYMESH INC. ALL RIGHTS RESERVED. 2025 
 
 import agentpy as ap
 import numpy as np
