@@ -8,53 +8,40 @@ from collections import defaultdict, deque
 # -------------------------
 # Parameter fetching function
 # -------------------------
-def fetch_parameters_from_api(api_url="http://localhost:5000/TidyMesh/Sim/v2/run", timeout=10):
+def check_api_server_availability(api_base_url="http://localhost:5000", timeout=10):
     """
-    Fetch simulation parameters from the API endpoint with timeout.
+    Check if API server is available without fetching parameters.
     
     Args:
-        api_url (str): The API endpoint URL
+        api_base_url (str): The API base URL
         timeout (int): Timeout in seconds
     
     Returns:
-        dict or None: Parameters dict if successful, None if failed/timeout
+        bool: True if server is available, False otherwise
     """
     try:
-        print(f"Attempting to fetch parameters from {api_url} (timeout: {timeout}s)...")
-        
-        # Make GET request to check if endpoint exists and get current parameters
-        response = requests.get(api_url, timeout=timeout)
+        print(f"Checking API server availability at {api_base_url} (timeout: {timeout}s)...")
+        response = requests.get(api_base_url, timeout=timeout)
         
         if response.status_code == 200:
-            data = response.json()
-            print("✓ Successfully fetched parameters from API endpoint")
-            
-            # Extract parameters from the response
-            # The API might return different structures, so we handle both cases
-            if 'params' in data:
-                return data['params']
-            elif 'data' in data:
-                return data['data']
-            else:
-                # If it's just the parameters directly
-                return data
-                
+            print("✓ API server is running and available for external requests")
+            return True
         else:
-            print(f"⚠ API endpoint returned status code: {response.status_code}")
-            return None
+            print(f"⚠ API server returned status code: {response.status_code}")
+            return False
             
     except requests.exceptions.Timeout:
-        print(f"⚠ Request timed out after {timeout} seconds")
-        return None
+        print(f"⚠ API server check timed out after {timeout} seconds")
+        return False
     except requests.exceptions.ConnectionError:
-        print("⚠ Could not connect to API endpoint")
-        return None
+        print("⚠ Could not connect to API server")
+        return False
     except requests.exceptions.RequestException as e:
-        print(f"⚠ Request failed: {e}")
-        return None
+        print(f"⚠ API server check failed: {e}")
+        return False
     except Exception as e:
-        print(f"⚠ Unexpected error fetching parameters: {e}")
-        return None
+        print(f"⚠ Unexpected error checking API server: {e}")
+        return False
 
 # -------------------------
 # Small helpers
@@ -640,39 +627,45 @@ DEFAULT = {
 }
 
 # ---- Public entry for Flask API ----
-def run_simulation(params_overrides=None, fetch_from_api=True, api_timeout=10):
+def run_simulation(params_overrides=None, check_api_server=None, api_timeout=10):
     """
     Accepts dict with: n_trucks, n_bins, n_tlights, n_obstacles, steps (optional),
     plus any existing keys. Missing/invalid values fall back to DEFAULT.
     
     Args:
         params_overrides (dict): Manual parameter overrides
-        fetch_from_api (bool): Whether to attempt fetching parameters from API
-        api_timeout (int): Timeout for API parameter fetching in seconds
+        check_api_server (bool or None): Whether to check if API server is available
+                                       If None, will auto-detect if running from API (no check)
+        api_timeout (int): Timeout for API server check in seconds
     """
     p = DEFAULT.copy()
     
-    # First, try to fetch parameters from API if enabled
-    api_params = None
-    if fetch_from_api:
-        print("=" * 50)
-        print("🔄 Attempting to fetch parameters from API...")
-        api_params = fetch_parameters_from_api(timeout=api_timeout)
-        
-        if api_params:
-            print("✓ Using parameters from API endpoint")
-            # Merge API parameters first
-            for key, value in api_params.items():
-                if key in p:
-                    p[key] = value
-        else:
-            print("⚠ API parameter fetch failed or timed out")
-            print("🔄 Proceeding with default parameters...")
+    # Auto-detect if we're being called from API (check_api_server=None and has params)
+    is_api_call = (check_api_server is None and params_overrides is not None)
     
-    # Then apply any manual overrides
+    # Check if API server is available (only for CLI usage, not API calls)
+    if check_api_server is True:
+        print("=" * 50)
+        print("🔄 Checking if API server is available...")
+        server_available = check_api_server_availability(timeout=api_timeout)
+        if server_available:
+            print("ℹ  API server is ready to receive external requests (e.g., from Postman)")
+            print("ℹ  This simulation will run with provided parameters")
+        else:
+            print("ℹ  API server not available - running in standalone mode")
+    elif is_api_call:
+        print("=" * 50)
+        print("🌐 Running simulation via API request")
+    
+    # Apply any manual overrides
     o = (params_overrides or {})
-    if o:
-        print("🔧 Applying manual parameter overrides...")
+    if o and not is_api_call:
+        print("🔧 Applying parameter overrides...")
+    elif o and is_api_call:
+        print("📨 Using parameters from API request:")
+        for key, value in o.items():
+            if key in ['n_trucks', 'n_bins', 'n_tlights', 'n_obstacles', 'steps']:
+                print(f"   {key}: {value}")
 
     def _clamp_int(name, lo, hi):
         v = o.get(name, p[name])
@@ -709,33 +702,7 @@ def run_simulation(params_overrides=None, fetch_from_api=True, api_timeout=10):
 # ---- CLI fallback ----
 if __name__ == "__main__":
     print("🔄 TidyMesh Simulation v3 - Starting...")
-    print("📡 Will attempt to fetch parameters from API with 10-second timeout")
+    print("📡 Will check API server availability with 10-second timeout")
     
-    # Run with API parameter fetching enabled and 10-second timeout
-    model = CityWasteV2(DEFAULT)
-    
-    # Try to fetch parameters from API with timeout
-    api_params = fetch_parameters_from_api(timeout=10)
-    
-    final_params = DEFAULT.copy()
-    if api_params:
-        print("✓ Using parameters from API")
-        # Merge API parameters
-        for key, value in api_params.items():
-            if key in final_params:
-                final_params[key] = value
-    else:
-        print("⚠ Using default parameters (API fetch failed/timed out)")
-    
-    print("=" * 50)
-    print("🚀 Final simulation parameters:")
-    print(f"   Trucks: {final_params['n_trucks']}")
-    print(f"   Bins: {final_params['n_bins']}")
-    print(f"   Traffic Lights: {final_params['n_tlights']}")
-    print(f"   Obstacles: {final_params['n_obstacles']}")
-    print(f"   Steps: {final_params['steps']}")
-    print("=" * 50)
-    
-    # Create and run model with final parameters
-    model = CityWasteV2(final_params)
-    _ = model.run(steps=final_params["steps"])
+    # Run simulation with API server check enabled
+    run_simulation(params_overrides=None, check_api_server=True, api_timeout=10)
