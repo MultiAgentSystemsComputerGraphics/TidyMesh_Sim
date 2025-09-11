@@ -2,7 +2,59 @@
 import agentpy as ap
 import numpy as np
 import json, math, random, time, os
+import requests
 from collections import defaultdict, deque
+
+# -------------------------
+# Parameter fetching function
+# -------------------------
+def fetch_parameters_from_api(api_url="http://localhost:5000/TidyMesh/Sim/v2/run", timeout=10):
+    """
+    Fetch simulation parameters from the API endpoint with timeout.
+    
+    Args:
+        api_url (str): The API endpoint URL
+        timeout (int): Timeout in seconds
+    
+    Returns:
+        dict or None: Parameters dict if successful, None if failed/timeout
+    """
+    try:
+        print(f"Attempting to fetch parameters from {api_url} (timeout: {timeout}s)...")
+        
+        # Make GET request to check if endpoint exists and get current parameters
+        response = requests.get(api_url, timeout=timeout)
+        
+        if response.status_code == 200:
+            data = response.json()
+            print("✓ Successfully fetched parameters from API endpoint")
+            
+            # Extract parameters from the response
+            # The API might return different structures, so we handle both cases
+            if 'params' in data:
+                return data['params']
+            elif 'data' in data:
+                return data['data']
+            else:
+                # If it's just the parameters directly
+                return data
+                
+        else:
+            print(f"⚠ API endpoint returned status code: {response.status_code}")
+            return None
+            
+    except requests.exceptions.Timeout:
+        print(f"⚠ Request timed out after {timeout} seconds")
+        return None
+    except requests.exceptions.ConnectionError:
+        print("⚠ Could not connect to API endpoint")
+        return None
+    except requests.exceptions.RequestException as e:
+        print(f"⚠ Request failed: {e}")
+        return None
+    except Exception as e:
+        print(f"⚠ Unexpected error fetching parameters: {e}")
+        return None
 
 # -------------------------
 # Small helpers
@@ -588,13 +640,39 @@ DEFAULT = {
 }
 
 # ---- Public entry for Flask API ----
-def run_simulation(params_overrides=None):
+def run_simulation(params_overrides=None, fetch_from_api=True, api_timeout=10):
     """
     Accepts dict with: n_trucks, n_bins, n_tlights, n_obstacles, steps (optional),
     plus any existing keys. Missing/invalid values fall back to DEFAULT.
+    
+    Args:
+        params_overrides (dict): Manual parameter overrides
+        fetch_from_api (bool): Whether to attempt fetching parameters from API
+        api_timeout (int): Timeout for API parameter fetching in seconds
     """
     p = DEFAULT.copy()
+    
+    # First, try to fetch parameters from API if enabled
+    api_params = None
+    if fetch_from_api:
+        print("=" * 50)
+        print("🔄 Attempting to fetch parameters from API...")
+        api_params = fetch_parameters_from_api(timeout=api_timeout)
+        
+        if api_params:
+            print("✓ Using parameters from API endpoint")
+            # Merge API parameters first
+            for key, value in api_params.items():
+                if key in p:
+                    p[key] = value
+        else:
+            print("⚠ API parameter fetch failed or timed out")
+            print("🔄 Proceeding with default parameters...")
+    
+    # Then apply any manual overrides
     o = (params_overrides or {})
+    if o:
+        print("🔧 Applying manual parameter overrides...")
 
     def _clamp_int(name, lo, hi):
         v = o.get(name, p[name])
@@ -613,6 +691,16 @@ def run_simulation(params_overrides=None):
     # keep any other provided overrides if they exist in DEFAULT (e.g., road_thickness)
     for k, v in o.items():
         if k in p: p[k] = v
+    
+    # Display final parameters
+    print("=" * 50)
+    print("🚀 Starting simulation with parameters:")
+    print(f"   Trucks: {p['n_trucks']}")
+    print(f"   Bins: {p['n_bins']}")
+    print(f"   Traffic Lights: {p['n_tlights']}")
+    print(f"   Obstacles: {p['n_obstacles']}")
+    print(f"   Steps: {p['steps']}")
+    print("=" * 50)
 
     model = CityWasteV2(p)
     _ = model.run(steps=p["steps"])
@@ -620,5 +708,34 @@ def run_simulation(params_overrides=None):
 
 # ---- CLI fallback ----
 if __name__ == "__main__":
+    print("🔄 TidyMesh Simulation v3 - Starting...")
+    print("📡 Will attempt to fetch parameters from API with 10-second timeout")
+    
+    # Run with API parameter fetching enabled and 10-second timeout
     model = CityWasteV2(DEFAULT)
-    _ = model.run(steps=DEFAULT["steps"])
+    
+    # Try to fetch parameters from API with timeout
+    api_params = fetch_parameters_from_api(timeout=10)
+    
+    final_params = DEFAULT.copy()
+    if api_params:
+        print("✓ Using parameters from API")
+        # Merge API parameters
+        for key, value in api_params.items():
+            if key in final_params:
+                final_params[key] = value
+    else:
+        print("⚠ Using default parameters (API fetch failed/timed out)")
+    
+    print("=" * 50)
+    print("🚀 Final simulation parameters:")
+    print(f"   Trucks: {final_params['n_trucks']}")
+    print(f"   Bins: {final_params['n_bins']}")
+    print(f"   Traffic Lights: {final_params['n_tlights']}")
+    print(f"   Obstacles: {final_params['n_obstacles']}")
+    print(f"   Steps: {final_params['steps']}")
+    print("=" * 50)
+    
+    # Create and run model with final parameters
+    model = CityWasteV2(final_params)
+    _ = model.run(steps=final_params["steps"])
