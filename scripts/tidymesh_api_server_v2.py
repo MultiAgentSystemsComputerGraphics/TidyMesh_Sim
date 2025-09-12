@@ -1,14 +1,14 @@
 # api_server.py — TidyMesh Simulation API (Unity-ready)
-import sys, os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 import json
+import os
 import time
 from datetime import datetime
 import threading
 import logging
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # ---------------------------------
 # Logging / Flask

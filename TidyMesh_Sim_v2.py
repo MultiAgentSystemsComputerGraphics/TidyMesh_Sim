@@ -2,46 +2,7 @@
 import agentpy as ap
 import numpy as np
 import json, math, random, time, os
-import requests
 from collections import defaultdict, deque
-
-# -------------------------
-# Parameter fetching function
-# -------------------------
-def check_api_server_availability(api_base_url="http://localhost:5000", timeout=10):
-    """
-    Check if API server is available without fetching parameters.
-    
-    Args:
-        api_base_url (str): The API base URL
-        timeout (int): Timeout in seconds
-    
-    Returns:
-        bool: True if server is available, False otherwise
-    """
-    try:
-        print(f"Checking API server availability at {api_base_url} (timeout: {timeout}s)...")
-        response = requests.get(api_base_url, timeout=timeout)
-        
-        if response.status_code == 200:
-            print("✓ API server is running and available for external requests")
-            return True
-        else:
-            print(f"⚠ API server returned status code: {response.status_code}")
-            return False
-            
-    except requests.exceptions.Timeout:
-        print(f"⚠ API server check timed out after {timeout} seconds")
-        return False
-    except requests.exceptions.ConnectionError:
-        print("⚠ Could not connect to API server")
-        return False
-    except requests.exceptions.RequestException as e:
-        print(f"⚠ API server check failed: {e}")
-        return False
-    except Exception as e:
-        print(f"⚠ Unexpected error checking API server: {e}")
-        return False
 
 # -------------------------
 # Small helpers
@@ -596,9 +557,9 @@ DEFAULT = {
     "base_path": "config_Sim",
     "width": 500, "height": 400,
     "coord_offset_x": 260, "coord_offset_z": 120,
-    "steps": 1200,
+    "steps": 100000,
 
-    "n_trucks": 5, "n_bins": 40, "n_tlights": 10,
+    "n_trucks": 15, "n_bins": 10, "n_tlights": 10,
     "n_obstacles": 8,
     "obstacle_move_prob": 0.05,
     "obstacle_obey_lights": True,
@@ -627,45 +588,13 @@ DEFAULT = {
 }
 
 # ---- Public entry for Flask API ----
-def run_simulation(params_overrides=None, check_api_server=None, api_timeout=10):
+def run_simulation(params_overrides=None):
     """
     Accepts dict with: n_trucks, n_bins, n_tlights, n_obstacles, steps (optional),
     plus any existing keys. Missing/invalid values fall back to DEFAULT.
-    
-    Args:
-        params_overrides (dict): Manual parameter overrides
-        check_api_server (bool or None): Whether to check if API server is available
-                                       If None, will auto-detect if running from API (no check)
-        api_timeout (int): Timeout for API server check in seconds
     """
     p = DEFAULT.copy()
-    
-    # Auto-detect if we're being called from API (check_api_server=None and has params)
-    is_api_call = (check_api_server is None and params_overrides is not None)
-    
-    # Check if API server is available (only for CLI usage, not API calls)
-    if check_api_server is True:
-        print("=" * 50)
-        print("🔄 Checking if API server is available...")
-        server_available = check_api_server_availability(timeout=api_timeout)
-        if server_available:
-            print("ℹ  API server is ready to receive external requests (e.g., from Postman)")
-            print("ℹ  This simulation will run with provided parameters")
-        else:
-            print("ℹ  API server not available - running in standalone mode")
-    elif is_api_call:
-        print("=" * 50)
-        print("🌐 Running simulation via API request")
-    
-    # Apply any manual overrides
     o = (params_overrides or {})
-    if o and not is_api_call:
-        print("🔧 Applying parameter overrides...")
-    elif o and is_api_call:
-        print("📨 Using parameters from API request:")
-        for key, value in o.items():
-            if key in ['n_trucks', 'n_bins', 'n_tlights', 'n_obstacles', 'steps']:
-                print(f"   {key}: {value}")
 
     def _clamp_int(name, lo, hi):
         v = o.get(name, p[name])
@@ -684,16 +613,6 @@ def run_simulation(params_overrides=None, check_api_server=None, api_timeout=10)
     # keep any other provided overrides if they exist in DEFAULT (e.g., road_thickness)
     for k, v in o.items():
         if k in p: p[k] = v
-    
-    # Display final parameters
-    print("=" * 50)
-    print("🚀 Starting simulation with parameters:")
-    print(f"   Trucks: {p['n_trucks']}")
-    print(f"   Bins: {p['n_bins']}")
-    print(f"   Traffic Lights: {p['n_tlights']}")
-    print(f"   Obstacles: {p['n_obstacles']}")
-    print(f"   Steps: {p['steps']}")
-    print("=" * 50)
 
     model = CityWasteV2(p)
     _ = model.run(steps=p["steps"])
@@ -701,8 +620,5 @@ def run_simulation(params_overrides=None, check_api_server=None, api_timeout=10)
 
 # ---- CLI fallback ----
 if __name__ == "__main__":
-    print("🔄 TidyMesh Simulation v3 - Starting...")
-    print("📡 Will check API server availability with 10-second timeout")
-    
-    # Run simulation with API server check enabled
-    run_simulation(params_overrides=None, check_api_server=True, api_timeout=10)
+    model = CityWasteV2(DEFAULT)
+    _ = model.run(steps=DEFAULT["steps"])
