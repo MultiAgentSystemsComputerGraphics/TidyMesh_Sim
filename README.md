@@ -597,7 +597,7 @@ def validate_position(x, z, width=500, height=400):
 This is an academic project for the **Multi-Agent Computer Graphics** course at Universidad.
 
 ### **🎓 Course Information**
-- **Institution**: Universidad  
+- **Institution**: Instituto Tecnologico y de Estudios Superiores de Monterrey  
 - **Semester**: 5th Semester (Quinto Semestre)
 - **Course**: Multi-Agent Computer Graphics (MultiAgentsComputerGraphics)
 - **Project**: Advanced Multi-Agent Waste Collection Simulation
