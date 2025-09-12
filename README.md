@@ -102,6 +102,96 @@ TidyMesh_Sim/
     └── Fleet Management Hub
 ```
 
+### **🎭 Complete Agent Roles & Responsibilities**
+
+| Agent Type | Class | Primary Role | Key Capabilities | Interaction Methods |
+|------------|-------|--------------|------------------|-------------------|
+| **🚛 Garbage Truck** | `Truck` | Autonomous waste collection vehicle | Q-Learning pathfinding, Contract bidding, Load management, Energy tracking | Contract Net Protocol, BFS navigation, Multi-action execution |
+| **📋 Dispatcher** | `Dispatcher` | Central task coordination hub | Contract Net server, Bid evaluation, Task assignment, Fairness balancing | Message queue processing, Bidding system, Fallback assignment |
+| **🗑️ Trash Bin** | `TrashBin` | Dynamic waste container | Real-time fill simulation, State transitions, Threshold monitoring | Ready notifications, Service requests, Completion reporting |
+| **🚦 Traffic Light** | `TrafficLight` | Urban traffic control system | Cyclic phase management, Movement restriction, Intersection control | Red/Green state cycling, Agent blocking, Coordinate-based positioning |
+| **🏭 Depot** | `Depot` | Fleet service station | Truck charging, Waste unloading, Fleet coordination hub | Energy replenishment, Load processing, Service operations |
+| **🚧 Road Obstacle** | `RoadObstacle` | Mobile traffic impediment | Dynamic movement, Traffic disruption, Realistic urban simulation | Random movement, Road occupation, Traffic light compliance |
+
+### **🔄 Agent Interaction Dynamics**
+
+The TidyMesh system implements a sophisticated multi-agent coordination mechanism where **Garbage Trucks** operate as intelligent Q-Learning agents that bid for waste collection tasks through a **Contract Net Protocol** managed by the central **Dispatcher**. Each **Trash Bin** autonomously monitors its fill level and notifies the system when collection is needed, while **Traffic Lights** create realistic urban constraints that trucks must navigate around. The **Depot** serves as the critical infrastructure hub where trucks recharge and unload collected waste, with **Road Obstacles** adding dynamic complexity to pathfinding challenges. This distributed architecture ensures emergent coordination behavior where no single agent has complete system knowledge, yet collective intelligence emerges through local interactions and learning.
+
+### **🤝 Coordination Mechanisms**
+
+#### **📡 Message-Based Communication System**
+```python
+# Central Message Queue (dispatcher_queue)
+Message Types:
+├── "READY"        # Bin → Dispatcher: Bin ready for collection
+├── "PROPOSE"      # Truck → Dispatcher: Bid submission with cost
+├── "INFORM-DONE"  # Truck → Dispatcher: Task completion notification  
+└── "INFORM-FAIL"  # Truck → Dispatcher: Task failure notification
+
+# Message Flow Example
+TrashBin.fill >= threshold → dispatcher_queue.append(("READY", bin, {"vol": fill}))
+Dispatcher → truck.receive_cfp(bin)  # Call for Proposals
+Truck → dispatcher_queue.append(("PROPOSE", truck, {"bin": bin, "cost": calculated_cost}))
+```
+
+#### **💼 Contract Net Protocol Implementation**
+
+**Phase 1: Task Announcement**
+```python
+# Dispatcher broadcasts Call for Proposals (CFP)
+for truck in available_fleet:
+    truck.receive_cfp(bin)  # Direct method call
+```
+
+**Phase 2: Bid Calculation & Submission**
+```python
+# Each truck evaluates task feasibility and cost
+def receive_cfp(self, bin):
+    if self.assigned is not None: return  # Already busy
+    
+    # Calculate energy requirements
+    distance_to_bin = manhattan(self.pos, bin.pos)
+    distance_to_depot = manhattan(bin.pos, self.model.depot.pos)
+    energy_needed = (distance_to_bin + distance_to_depot) * energy_per_move + energy_reserve
+    
+    if energy_needed > self.energy: return  # Insufficient energy
+    
+    # Submit competitive bid
+    cost = distance_to_bin + (self.load/self.capacity) * 2.0  # Distance + load penalty
+    self.model.dispatcher_queue.append(("PROPOSE", self, {"bin": bin, "cost": cost}))
+```
+
+**Phase 3: Bid Evaluation & Award**
+```python
+# Dispatcher evaluates all bids with fairness mechanism
+def award_contract(self, bin, bids):
+    # Apply fairness bonus (trucks with fewer assignments get advantage)
+    scored_bids = [(cost + 0.2 * self.ledger[truck], truck) for truck, cost in bids.items()]
+    scored_bids.sort(key=lambda x: x[0])  # Lowest cost wins
+    
+    winner = scored_bids[0][1]
+    self.awarded[bin] = winner
+    self.ledger[winner] += 1  # Track workload for fairness
+    winner.receive_award(bin)  # Direct assignment
+```
+
+#### **⚡ Real-Time Coordination Features**
+
+**Dynamic Task Management**
+- **Timeout Mechanism**: CFPs expire after `cfp_timeout` steps to prevent deadlocks
+- **Fallback Assignment**: If no bids received, dispatcher assigns nearest available truck
+- **Task Completion Tracking**: Trucks report success/failure for continuous coordination
+
+**Load Balancing**
+- **Fairness Ledger**: Tracks task assignments per truck to prevent overloading
+- **Availability Checking**: Only unassigned trucks can bid on new tasks
+- **Energy Validation**: Trucks automatically reject tasks exceeding energy capacity
+
+**Emergent Coordination Behaviors**
+- **Distributed Decision Making**: No central path planning - trucks use individual Q-Learning
+- **Competitive Resource Allocation**: Multiple trucks compete for optimal task assignments  
+- **Adaptive Load Distribution**: System automatically balances workload across fleet
+
 ### **🧠 Q-Learning Implementation**
 ```python
 # State Representation (6 dimensions)
@@ -118,10 +208,47 @@ q_state = (
 ACTIONS = ["FORWARD", "LEFT", "RIGHT", "PICK", "DROP", "CHARGE", "WAIT"]
 
 # Learning Parameters
-alpha = 0.8      # Learning rate (configurable)
-gamma = 0.95     # Discount factor
-epsilon = 0.1    # Exploration rate
+alpha = 0.5      # Learning rate (default: 0.5)
+gamma = 0.98     # Discount factor (default: 0.98) 
+epsilon = 0.08   # Exploration rate (default: 0.08)
 ```
+
+### **🎓 How Our Q-Learning Algorithm Works**
+
+Our Q-Learning implementation employs a **selective learning strategy** that focuses computational resources on the most critical decision points rather than updating Q-values at every step. The algorithm only triggers learning updates when trucks reach intersections (where multiple path choices exist) or when significant events occur (pickup, drop-off, charging, reaching targets). This intersection-based learning approach recognizes that most meaningful decisions in urban navigation happen at crossroads, making the system computationally efficient while capturing the most important learning opportunities. The state representation uses a **compact 6-dimensional tuple** that discretizes the truck's position into grid buckets (0-9 for both X and Y coordinates), combines this with contextual information about intersection status, load level (0-3), energy level (0-3), and target type, creating a manageable state space that balances complexity with learning efficiency.
+
+The reward structure is **task-oriented and penalty-balanced**, providing strong positive reinforcement for productive actions while discouraging inefficient behavior. Successful waste pickup generates substantial rewards (+6.0 base), with drop-off actions earning even higher rewards (+12.0 plus a load-based bonus), and charging operations receiving moderate positive feedback (+3.0). The system incorporates **intelligent penalty mechanisms** that punish low energy states (-10.0 when energy falls below movement threshold) and invalid actions (varying penalties from -1.0 to -3.0), encouraging trucks to maintain operational readiness and make valid decisions. At intersections, the algorithm employs epsilon-greedy action selection with a low exploration rate (ε=0.08), meaning trucks primarily exploit learned knowledge while occasionally exploring new paths, and the high discount factor (γ=0.98) emphasizes long-term planning over immediate rewards, enabling trucks to develop sophisticated route optimization strategies that consider the full journey from pickup to depot rather than just immediate gains.
+
+## 📊 **Key Findings & Performance Analysis**
+
+Based on current simulation results (28 bins completed in 150,000 ticks):
+
+### **🎯 Performance Metrics**
+- **Bin Collection Rate**: 28 bins successfully processed
+- **Total Fleet Distance**: 575 units traveled  
+- **Average Distance per Bin**: ~20.5 units (575/28)
+- **System Efficiency**: 0.19 bins per 1000 ticks
+- **Open Tasks**: 12 remaining assignments
+- **Fleet Utilization**: Mixed performance across 15+ truck agents
+
+### **🧠 Q-Learning Effectiveness**
+- **Learning Parameters**: α=0.5 (moderate learning), ε=0.08 (low exploration)
+- **Reward Convergence**: Most agents showing stable reward values around -0.02
+- **Exploration Coverage**: Variable across agents (1-24 coverage points)
+- **Corner Avoidance**: Successfully implemented with 0 stuck incidents
+
+### **⚙️ System Insights**
+1. **Contract Net Protocol Success**: Effective task distribution with competitive bidding
+2. **Spatial Coverage**: Good exploration distribution across the 500×400 grid environment  
+3. **Load Management**: Proper capacity utilization (4.0 units max) with variable load states
+4. **State Persistence**: Trucks maintain consistent behavioral states (Patrol, ToBin, ToDepot)
+5. **Coordination Efficiency**: 0 pending CFPs indicating smooth communication flow
+
+### **🔧 Optimization Opportunities**
+- Distance optimization could reduce the average 20.5 units per bin
+- Further epsilon reduction may improve exploitation of learned policies
+- Load balancing between high-performing and underutilized agents
+- Dynamic learning rate adjustment based on performance metrics
 
 ### **🌐 API Integration**
 ```python

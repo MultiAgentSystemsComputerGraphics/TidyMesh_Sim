@@ -580,9 +580,9 @@ DEFAULT = {
     "base_path": "config_Sim",
     "width": 500, "height": 400,
     "coord_offset_x": 260, "coord_offset_z": 120,
-    "steps": 100000,
+    "steps": 150000,
 
-    "n_trucks": 15, "n_bins": 10, "n_tlights": 10,
+    "n_trucks": 55, "n_bins": 40, "n_tlights": 7,
     "n_obstacles": 8,
     "obstacle_move_prob": 0.05,
     "obstacle_obey_lights": True,
