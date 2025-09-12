@@ -1,305 +1,651 @@
 # 🚀 TidyMesh Enhanced Multi-Agent Simulation
 
-A state-of-the-art multi-agent system for waste collection simulation featuring **advanced multi-layered Q-Learning**, contract net protocol negotiation, corner cliff avoidance, and comprehensive visualization with coordinate transformation.
+A comprehensive multi-agent system for urban waste collection simulation featuring **advanced Q-Learning**, **contract net protocol negotiation**, **coordinate transformation**, and **Unity integration** with RESTful API.
 
-## 🔥 **MAJOR ENHANCEMENTS v2.0**
+## 🔥 **KEY FEATURES v2.0**
 
-### ✅ **Advanced Multi-Layered Q-Learning**
-- **3 Specialized Q-Tables**: Navigation, Exploration, Emergency (corner escape)
-- **12-Dimensional State Representation**: Enhanced environmental awareness
-- **Adaptive Learning Parameters**: Dynamic epsilon/alpha decay for optimal convergence
-- **Sophisticated Reward System**: Massive rewards for bin completion (200 points) and depot operations (100+ points)
+### ✅ **Multi-Agent System Architecture**
+- **Intelligent Garbage Trucks**: Q-Learning enabled agents with dynamic pathfinding
+- **Contract Net Protocol**: Distributed task allocation with bidding system
+- **Smart Dispatcher**: Centralized coordination with fallback assignment mechanisms  
+- **Dynamic Waste Bins**: Real-time fill simulation with threshold-based notifications
+- **Traffic Light Integration**: Realistic urban environment simulation
 
-### ✅ **Corner Cliff Avoidance System**
-- **Automatic Corner Detection**: 8-cell margin safety zones
-- **Emergency Escape Priority**: Overrides normal Q-learning for immediate corner exit
-- **Time-Based Penalties**: Escalating costs for prolonged corner residence
-- **Guaranteed Mobility**: Prevents agents from getting stuck indefinitely
+### ✅ **Advanced Q-Learning Implementation**
+- **State Representation**: 6-dimensional state space (position, intersection, load, energy, target)
+- **Reward System**: Sophisticated scoring for pickup, dropoff, charging, and movement efficiency
+- **Adaptive Learning**: Configurable epsilon-greedy exploration with learning rate adaptation
+- **Performance Tracking**: Real-time action logging and learning progress monitoring
 
-### ✅ **Coordinate Transformation Engine**
-- **JSON-to-Grid Mapping**: Transforms real-world coordinates (-260 to +200) to simulation grid (500×400)
-- **Universal Compatibility**: Handles spawn points, bins, traffic lights, and depot positions
-- **Validation System**: Ensures all positions are within bounds with fallback mechanisms
-- **Zero Coordinate Warnings**: Eliminated all "outside bounds" errors
+### ✅ **Coordinate Transformation System**
+- **JSON-to-Grid Mapping**: Seamless transformation from Unity world coordinates to simulation grid
+- **Configurable Offsets**: Support for different coordinate systems (offset_x: 260, offset_z: 120)
+- **Boundary Validation**: Robust position checking with fallback to road network
+- **Multi-Scale Support**: Handles coordinate ranges from -260 to +200 mapped to 500×400 grid
 
-### ✅ **Performance Optimization**
-- **100% Improvement**: 6 bins completed vs 3 previously
-- **Aggressive Collection Parameters**: 1.0 pick amount, 4.0 truck capacity, 0.6 unload threshold
-- **Expanded Opportunities**: 40 bins (doubled), minimal obstacles (5 vs 15)
-- **Real-Time Tracking**: Live bin completion notifications during simulation
+### ✅ **Unity Integration & API**
+- **RESTful API Server**: Flask-based server with CORS support for Unity WebGL
+- **Real-Time Data Exchange**: Live simulation state and history endpoints
+- **File Serving**: Static visualization and configuration file access
+- **Health Monitoring**: Comprehensive server status and file availability checking
 
-## Project Structure
+## 📁 **Project Structure**
 
 ```
 TidyMesh_Sim/
-├── TidyMesh_Sim_v2.py       # ⭐ ENHANCED Main simulation with advanced Q-Learning
-├── requirements.txt         # Python dependencies
-├── README.md               # This documentation
-├── IMPROVEMENTS_SUMMARY.md  # 📊 Detailed enhancement documentation
-├── PERFORMANCE_BREAKTHROUGH.md # 🔥 Performance improvement analysis
+├── 📄 Core Simulation
+│   ├── TidyMesh_Sim_v2.py           # 🎯 Main simulation engine with Q-Learning
+│   ├── requirements.txt             # 📦 Python dependencies  
+│   ├── README.md                    # 📖 This documentation
+│   └── TidyMesh_API_Endpoints.md    # 🌐 Complete API documentation
 │
-├── config_Sim/             # 🗂️ Configuration files
-│   ├── roadZones.json          # Road network data with coordinate transformation
-│   ├── trashBinZones.json      # Waste bin locations (up to 60 bins)
-│   └── trafficLights.json      # Traffic light positions and cycles
+├── ⚙️ Configuration
+│   └── config_Sim/
+│       ├── roadZones.json           # 🛣️ Road network topology (4000+ lanes)
+│       ├── trashBinZones.json       # 🗑️ Waste bin locations (60+ zones)
+│       └── trafficLights.json       # 🚦 Traffic light positions & cycles
 │
-├── scripts/                # 🛠️ Utility scripts
-│   ├── visualizer.py           # 🎨 Enhanced visualization with proper coordinate system
-│   ├── enhanced_qlearning_report.py   # 📊 Advanced HTML report generator
-│   └── debug_history.py        # 🔧 Debug and analysis tools
+├── 🔧 API & Scripts  
+│   └── scripts/
+│       ├── tidymesh_api_server_v2.py # 🌐 Flask API server for Unity
+│       ├── test_api_client.py        # 🧪 API testing utilities
+│       ├── visualizer.py             # 📊 Advanced visualization engine
+│       └── debug_history.py          # � Simulation analysis tools
 │
-├── results/                 # Simulation outputs
-│   ├── simulation_data/     # Enhanced JSON data files
-│   │   ├── mas_final_state.json      # Final simulation state
-│   │   └── simulation_history.json   # Complete step-by-step history
-│   └── visualizations/      # 🎬 Working animations and plots
-│       ├── simulation_overview.png   # Static overview (500×400 grid)
-│       ├── qlearning_analysis.png    # Multi-layered Q-Learning analysis
-│       └── simulation_animation.gif  # ✅ FIXED animated simulation
+├── 📊 Results & Data
+│   └── results/
+│       ├── simulation_data/          # 💾 JSON simulation outputs
+│       │   ├── mas_final_state.json     # Final agent states
+│       │   └── simulation_history.json  # Complete step history
+│       └── visualizations/           # � Generated graphics
+│           ├── simulation_overview.png     # Performance summary
+│           ├── qlearning_analysis.png      # Learning analytics  
+│           └── simulation_animation.gif    # Animated simulation
 │
-├── documentation/           # Enhanced documentation
-│   └── TidyMesh_QLearning_Analysis_Report.html
-│
-└── scripts/                # Analysis utilities
-    ├── debug_history.py
-    ├── generate_qlearning_pdf.py
-    └── simple_qlearning_report.py
+└── 📚 Documentation
+    └── documentation/
+        ├── Advanced_QLearning_Documentation.md  # 🧠 Q-Learning architecture
+        └── TidyMesh_API_Unity_Guide.md         # 🎮 Unity integration guide
 ```
 
-## 🎯 **Core Features**
+## 🎯 **Core System Components**
 
-### **Advanced Multi-Agent System**
-- **5 Intelligent Trucks**: Enhanced Q-Learning with corner cliff avoidance
-- **40 Dynamic Bins**: Faster fill rates (0.05) with aggressive threshold settings
-- **5 Traffic Lights**: Coordinate-transformed positioning with shorter cycles
-- **Smart Dispatcher**: Contract Net Protocol with fairness algorithms
-- **Depot Operations**: Optimized unload threshold (0.6) for efficiency
-
-### **Enhanced Q-Learning Architecture**
+### **🤖 Agent Architecture**
 ```python
-# Multi-Layered Q-Tables
-navigation_q: Standard movement and pathfinding
-exploration_q: Area discovery and opportunity seeking  
-emergency_q: Corner escape and emergency situations
-
-# 12-Dimensional State Vector
-[pos_x, pos_y, target_distance, load_ratio, 
- corner_status, environmental_pressure, task_priority,
- depot_distance, bin_density, traffic_status,
- exploration_need, emergency_level]
-
-# Adaptive Parameters
-epsilon: 0.1 → dynamic decay (low exploration for exploitation focus)
-alpha: 0.8 → high learning rate for rapid adaptation
-gamma: 0.98 → very high discount factor for long-term planning
+# Multi-Agent System Components
+├── GarbageTruck (Base Agent)
+│   ├── Q-Learning Engine (6D state space)
+│   ├── Contract Net Protocol Client  
+│   ├── Dynamic Pathfinding (BFS + road network)
+│   └── Energy & Load Management
+│
+├── Dispatcher (Coordination Agent)
+│   ├── Contract Net Protocol Server
+│   ├── Task Assignment & Bidding
+│   ├── Fairness Algorithm
+│   └── Fallback Assignment
+│
+├── TrashBin (Environment Agent)  
+│   ├── Dynamic Fill Simulation
+│   ├── State Management (Ready/Servicing/Done)
+│   ├── Notification System
+│   └── Threshold-Based Alerts
+│
+├── TrafficLight (Infrastructure Agent)
+│   ├── Cyclic State Management
+│   ├── Coordinate Transformation
+│   └── Agent Movement Control
+│
+└── Depot (Service Agent)
+    ├── Truck Charging Station
+    ├── Waste Unloading Point
+    └── Fleet Management Hub
 ```
 
-### **Comprehensive Visualization System**
-- **✅ Fixed Coordinate System**: Proper 500×400 grid visualization
-- **Real-Time Animation**: Working GIF with truck movements and bin collections
-- **Multi-Panel Analysis**: Performance metrics, learning progress, spatial analysis
-- **Q-Learning Insights**: Action distribution, efficiency metrics, learning curves
+### **🧠 Q-Learning Implementation**
+```python
+# State Representation (6 dimensions)
+q_state = (
+    bucket_x,        # Position X (0-9 buckets)  
+    bucket_y,        # Position Y (0-9 buckets)
+    at_intersection, # Boolean intersection flag (0/1)
+    load_level,      # Load capacity ratio (0-3)
+    energy_level,    # Energy level (0-3)  
+    target_type      # Target type: None/Depot/Bin (0-2)
+)
 
-## 🚀 **Quick Start**
+# Action Space
+ACTIONS = ["FORWARD", "LEFT", "RIGHT", "PICK", "DROP", "CHARGE", "WAIT"]
 
-### 1. Run Enhanced Simulation
+# Learning Parameters
+alpha = 0.8      # Learning rate (configurable)
+gamma = 0.95     # Discount factor
+epsilon = 0.1    # Exploration rate
+```
+
+### **🌐 API Integration**
+```python
+# RESTful API Endpoints
+GET  /                                      # API information
+GET  /health                               # Health status  
+GET  /status                               # Server status
+GET  /TidyMesh/Sim/v2/mas_final_state.json      # Final state
+GET  /TidyMesh/Sim/v2/simulation_history.json   # Complete history
+POST /TidyMesh/Sim/v2/run                       # Start simulation
+GET  /TidyMesh/Sim/v2/run/status                # Run status
+```
+
+## 🚀 **Quick Start Guide**
+
+### **1. 🏃‍♂️ Run Simulation**
 ```bash
-cd "TidyMesh_Sim"
+# Navigate to project directory
+cd TidyMesh_Sim
+
+# Run main simulation with default parameters
 python TidyMesh_Sim_v2.py
-```
-**Expected Output**: 6+ bins completed, zero coordinate warnings, real-time bin completion tracking
 
-### 2. Generate Working Visualizations
+# Expected Output: Real-time agent updates, bin completion tracking
+```
+
+### **2. 🌐 Start API Server (for Unity Integration)**
 ```bash
-python scripts/visualizer.py
+# Start Flask API server
+cd scripts
+python tidymesh_api_server_v2.py
+
+# Server starts on http://localhost:5000
+# CORS enabled for Unity WebGL builds
 ```
-**Expected Output**: Working animation GIF, static overview, Q-Learning analysis plots
 
-### 3. View Performance Analysis
-Open the generated documentation files:
-- `PERFORMANCE_BREAKTHROUGH.md` - Dramatic improvement analysis
-- `IMPROVEMENTS_SUMMARY.md` - Technical enhancement details
+### **3. 🧪 Test API Endpoints**
+```bash
+# Test all endpoints and connectivity
+cd scripts  
+python test_api_client.py
 
-## ⚡ **Enhanced Parameters**
+# Validates: Server health, data availability, response times
+```
 
-### **High-Performance Configuration**
+### **4. 📊 Generate Visualizations**
+```bash
+# Create comprehensive analysis plots and animations
+cd scripts
+python visualizer.py
+
+# Outputs: simulation_overview.png, qlearning_analysis.png, simulation_animation.gif
+```
+
+## ⚙️ **Configuration & Parameters**
+
+### **🎛️ Simulation Parameters**
 ```python
-# Grid & Coordinate System
-"width": 500,               # Expanded grid width
-"height": 400,              # Expanded grid height  
-"coord_offset_x": 260,      # JSON coordinate transformation
-"coord_offset_z": 120,      # JSON coordinate transformation
-
-# Aggressive Collection Settings
-"n_bins": 40,               # DOUBLED opportunities
-"truck_capacity": 4.0,      # Higher capacity (was 3.0)
-"pick_amount": 1.0,         # Faster collection (was 0.5)
-"unload_threshold": 0.6,    # Earlier unload (was 0.8)
-"bin_fill_rate": 0.05,      # Faster bin filling (was 0.02)
-
-# Optimized Q-Learning
-"q_epsilon": 0.1,           # Low exploration (exploitation focus)
-"q_alpha": 0.8,             # High learning rate
-"q_gamma": 0.98,            # Very high discount factor
-"corner_margin": 8,         # Smaller corner margins
-
-# Reduced Obstacles  
-"n_tlights": 5,             # Fewer traffic lights (was 10)
-"n_obstacles": 5,           # Minimal obstacles (was 15)
+# Core Simulation Settings
+{
+    "width": 500,              # Grid width (cells)
+    "height": 400,             # Grid height (cells)  
+    "steps": 100000,           # Maximum simulation steps
+    
+    # Agent Configuration
+    "n_trucks": 15,            # Number of garbage trucks
+    "n_bins": 10,              # Number of waste bins
+    "n_tlights": 10,           # Number of traffic lights
+    "n_obstacles": 8,          # Number of moving obstacles
+    
+    # Coordinate Transformation
+    "coord_offset_x": 260,     # X-axis offset for JSON coordinates
+    "coord_offset_z": 120,     # Z-axis offset for JSON coordinates
+    
+    # Truck Parameters
+    "truck_capacity": 4.0,     # Maximum truck load capacity
+    "pick_amount": 0.5,        # Amount picked per action
+    "unload_threshold": 0.8,   # Load ratio to trigger depot return
+    "energy_max": 200,         # Maximum truck energy
+    
+    # Bin Parameters  
+    "bin_threshold": 0.8,      # Fill level for bin to become "Ready"
+    "bin_fill_rate": 0.05,     # Rate of bin filling per step
+    
+    # Q-Learning Configuration
+    "q_alpha": 0.8,            # Learning rate
+    "q_gamma": 0.95,           # Discount factor
+    "q_epsilon": 0.1,          # Exploration rate
+}
 ```
 
-## 📊 **Performance Metrics**
-
-### **Before vs After Comparison**
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| **Bins Completed** | 3 | **6** | **+100%** |
-| **Coordinate Warnings** | 100+ | **0** | **✅ ELIMINATED** |
-| **Visualization GIF** | Empty/Broken | **✅ Working** | **Fixed** |
-| **Traffic Light Issues** | Out of bounds | **✅ Transformed** | **Resolved** |
-| **Active Trucks** | 2-3 | **5** | **+67%** |
-| **Fleet Distance** | 2152 | **2485** | **+15%** |
-
-### **Real-Time Success Tracking**
-```
-TRUCK 52: Completed bin 42! Total collected: 1
-TRUCK 49: Completed bin 34! Total collected: 1  
-TRUCK 50: Completed bin 5! Total collected: 1
-TRUCK 51: Completed bin 12! Total collected: 1
-TRUCK 50: Completed bin 35! Total collected: 2
-TRUCK 53: Completed bin 27! Total collected: 1
-```
-
-## 🛠 **Technical Architecture**
-
-### **Enhanced Agent Classes**
-- **GarbageTruck**: Multi-layered Q-Learning with corner avoidance
-- **TrashBin**: Dynamic fill simulation with aggressive parameters
-- **Dispatcher**: Contract Net with enhanced fairness algorithms  
-- **TrafficLight**: Coordinate-transformed positioning
-- **Depot**: Optimized unload operations
-
-### **Advanced Learning System**
-- **Context-Aware Action Selection**: Different Q-tables for different situations
-- **Knowledge Transfer**: Learning shared between Q-table layers
-- **Emergency Override**: Corner situations bypass normal decision making
-- **Adaptive Exploration**: Dynamic epsilon decay based on performance
-
-### **Coordinate Transformation Engine**
+### **🗺️ Coordinate System**
 ```python
-def transform_coordinates(json_x, json_z, offset_x, offset_z):
-    """Transform JSON coordinates to grid coordinates"""
-    grid_x = int(json_x + offset_x)
-    grid_z = int(json_z + offset_z)
+# JSON World Coordinates → Simulation Grid Mapping
+def transform_coordinates(json_x, json_z, offset_x=260, offset_z=120):
+    """
+    Transform Unity world coordinates to simulation grid
+    
+    Input Range:  X: [-260, +200], Z: [-120, +280] 
+    Output Range: X: [0, 500],     Y: [0, 400]
+    """
+    grid_x = int(json_x + offset_x)  # Shift and convert
+    grid_z = int(json_z + offset_z)  # Shift and convert
     return grid_x, grid_z
 
-def is_valid_grid_position(x, z, width, height):
-    """Check if grid coordinates are within bounds"""
+# Validation ensures positions stay within bounds
+def is_valid_position(x, z, width=500, height=400):
     return 0 <= x < width and 0 <= z < height
+```
+
+
+### **🎯 Key Performance Indicators**
+| Metric | Description | Target |
+|--------|-------------|--------|
+| **Bin Completion Rate** | Percentage of bins fully serviced | >80% |
+| **Fleet Efficiency** | Distance per waste unit collected | <20 units |
+| **Learning Convergence** | Q-value stabilization time | <50K steps |
+| **Coordination Success** | Successful contract negotiations | >90% |
+| **Resource Utilization** | Truck capacity and energy usage | >75% |
+
+### **🔬 Q-Learning Analytics**
+```python
+# Learning Progress Indicators
+{
+    "q_table_size": 1500,         # Number of learned state-action pairs
+    "exploration_rate": 0.1,      # Current epsilon value
+    "learning_rate": 0.8,         # Current alpha value  
+    "reward_convergence": True,   # Whether rewards are stabilizing
+    "action_distribution": {      # Action usage statistics
+        "FORWARD": 0.45,
+        "LEFT": 0.15, 
+        "RIGHT": 0.15,
+        "PICK": 0.10,
+        "DROP": 0.05,
+        "CHARGE": 0.05,
+        "WAIT": 0.05
+    }
+}
+```
+
+## 🛠 **Technical Implementation**
+
+### **🏗️ System Architecture**
+```python
+# Core Framework: AgentPy (Mesa-compatible)
+# Backend: Python 3.8+
+# API: Flask + CORS for Unity integration
+# Pathfinding: BFS with road network graphs
+# Learning: Q-Learning with epsilon-greedy exploration
+# Coordination: Contract Net Protocol
+# Visualization: Matplotlib + Seaborn + PIL
+
+# Key Classes & Responsibilities
+├── CityWasteV2 (ap.Model)          # Main simulation model
+├── Truck (Base Agent)              # Q-Learning garbage trucks  
+├── Dispatcher (Base Agent)         # Task coordination hub
+├── TrashBin (Base Agent)           # Dynamic waste containers
+├── TrafficLight (Base Agent)       # Traffic control points
+├── Depot (Base Agent)              # Service station
+└── TidyMeshVisualizer              # Analytics & visualization
+```
+
+### **📡 Unity Integration Architecture** 
+```python
+# API Server Features
+✅ RESTful API with JSON responses
+✅ CORS enabled for Unity WebGL
+✅ Real-time simulation data access  
+✅ File serving for configurations
+✅ Health monitoring & status checks
+✅ Thread-safe simulation execution
+✅ Caching for improved performance
+
+# Unity Integration Flow
+Unity → HTTP GET → Flask API → JSON Response → Unity JsonUtility
+      ← Real-time ← Simulation ← Data Processing ←
+```
+
+### **🧠 Q-Learning Algorithm**
+```python
+# Standard Q-Learning Update Rule
+Q(s,a) ← Q(s,a) + α[r + γ max Q(s',a') - Q(s,a)]
+
+# State-Action Value Update
+def update_q_table(self, state, action, reward, next_state):
+    current_q = self.Q[state][action]
+    max_next_q = max(self.Q[next_state].values()) if self.Q[next_state] else 0
+    new_q = current_q + self.alpha * (reward + self.gamma * max_next_q - current_q)
+    self.Q[state][action] = new_q
+
+# Reward Function
+reward = base_movement_cost +              # -1 for movement
+         pickup_bonus +                    # +10 for successful pickup
+         dropoff_bonus +                   # +15 for successful dropoff  
+         charging_bonus +                  # +5 for charging
+         efficiency_multiplier             # +capacity_ratio bonus
 ```
 
 ## 🎮 **Usage Examples**
 
-### **Run with Custom Parameters**
+### **🔧 Custom Simulation Configuration**
 ```python
-from TidyMesh_Sim_v2 import CityWasteModel
+# Create and run simulation with custom parameters
+from TidyMesh_Sim_v2 import CityWasteV2
 
-# High-performance configuration
-params = {
-    "n_trucks": 5,
-    "n_bins": 40,
-    "steps": 1200,
-    "q_alpha": 0.8,
-    "q_epsilon": 0.1,
-    "truck_capacity": 4.0,
-    "pick_amount": 1.0
+# Define custom parameters
+custom_params = {
+    "n_trucks": 8,              # More trucks for faster collection
+    "n_bins": 20,               # More bins for longer simulation
+    "steps": 50000,             # Shorter run for testing
+    "q_alpha": 0.9,             # Higher learning rate
+    "q_epsilon": 0.05,          # Less exploration
+    "truck_capacity": 5.0,      # Larger truck capacity
 }
 
-model = CityWasteModel(params)
+# Run simulation
+model = CityWasteV2(custom_params)
 results = model.run()
+
+# Access final statistics
+print(f"Bins completed: {results['total_bins_done']}")
+print(f"Total distance: {results['total_distance']}")
 ```
 
-### **Generate Enhanced Visualizations**
+### **📊 Advanced Visualization**
 ```python
-from visualizer import TidyMeshVisualizer
+# Generate comprehensive analysis plots
+from scripts.visualizer import TidyMeshVisualizer
 
 viz = TidyMeshVisualizer()
-viz.create_static_overview()        # Performance metrics
-viz.create_qlearning_analysis()     # Multi-layered Q-Learning analysis  
-viz.create_animated_simulation()    # Working animation GIF
+
+# Create all visualizations
+viz.create_static_overview()        # Performance summary
+viz.create_qlearning_analysis()     # Learning progress analysis
+viz.create_animated_simulation()    # Full simulation animation
+
+# Custom visualization with specific parameters
+viz.create_agent_trajectory_plot(truck_id="ID_101")
+viz.create_efficiency_heatmap(time_window=(1000, 5000))
 ```
 
-## 🔧 **Dependencies**
+### **🌐 API Integration Example**
+```python
+# Unity C# integration example
+using UnityEngine;
+using UnityEngine.Networking;
+using System.Collections;
 
+public class TidyMeshAPIClient : MonoBehaviour 
+{
+    private string apiBaseUrl = "http://localhost:5000";
+    
+    // Get simulation final state
+    public IEnumerator GetSimulationState() 
+    {
+        string url = $"{apiBaseUrl}/TidyMesh/Sim/v2/mas_final_state.json";
+        
+        using (UnityWebRequest request = UnityWebRequest.Get(url)) 
+        {
+            yield return request.SendWebRequest();
+            
+            if (request.result == UnityWebRequest.Result.Success) 
+            {
+                SimulationState state = JsonUtility.FromJson<SimulationState>(request.downloadHandler.text);
+                UpdateSimulationVisualization(state);
+            }
+        }
+    }
+}
+```
+
+## 🔧 **Dependencies & Installation**
+
+### **📦 Required Packages**
 ```bash
+# Install all dependencies
 pip install -r requirements.txt
+
+# Core dependencies:
+pip install agentpy          # Multi-agent simulation framework
+pip install numpy           # Numerical computation  
+pip install pandas          # Data analysis and manipulation
+pip install matplotlib      # Plotting and visualization
+pip install seaborn         # Statistical data visualization
+pip install pillow          # Image processing for animations
+pip install flask           # Web framework for API server
+pip install flask-cors      # Cross-origin resource sharing
+pip install requests        # HTTP library for API testing
 ```
 
-**Required packages**:
-- `agentpy` - Multi-agent framework
-- `matplotlib` - Enhanced plotting with coordinate transformation
-- `seaborn` - Statistical visualization
-- `pandas` - Data processing
-- `pillow` - Image processing for animations
-- `numpy` - Numerical computation
+### **⚙️ System Requirements**
+```
+Python: 3.8 or higher
+RAM: 4GB minimum (8GB recommended for large simulations)
+CPU: Multi-core recommended for parallel agent processing
+Storage: 500MB for simulation outputs and visualizations
+Network: Port 5000 available for API server
+```
 
-## 🏆 **Key Achievements**
+### **🔐 Environment Setup**
+```bash
+# Create virtual environment (recommended)
+python -m venv tidymesh_env
 
-1. **✅ Multi-Layered Q-Learning**: 3 specialized Q-tables with 12-dimensional state space
-2. **✅ Corner Cliff Avoidance**: Automatic detection and escape mechanisms
-3. **✅ Coordinate Transformation**: Universal JSON-to-grid mapping system
-4. **✅ Performance Breakthrough**: 100% improvement in bin completion rates
-5. **✅ Working Visualizations**: Fixed coordinate system and animated GIF
-6. **✅ Zero Error Operation**: Eliminated all coordinate warnings and bounds issues
+# Activate environment
+# Windows:
+tidymesh_env\Scripts\activate
+# macOS/Linux:
+source tidymesh_env/bin/activate
 
-## 🌐 **Unity Integration & API Server**
+# Install dependencies
+pip install -r requirements.txt
 
-### **🚀 Quick Start API Server**
+# Verify installation
+python -c "import agentpy; print('AgentPy version:', agentpy.__version__)"
+```
 
+## 🏆 **Key Achievements & Features**
+
+### ✅ **Advanced Multi-Agent Coordination**
+- **Contract Net Protocol**: Distributed task allocation with competitive bidding
+- **Dynamic Load Balancing**: Automatic workload distribution among available trucks
+- **Intelligent Pathfinding**: BFS-based navigation with road network optimization
+- **Real-Time Communication**: Agent-to-agent messaging and coordination
+
+### ✅ **Sophisticated Q-Learning Implementation**  
+- **Adaptive Learning Rates**: Dynamic adjustment based on performance
+- **State Space Optimization**: 6-dimensional representation for efficient learning
+- **Reward Engineering**: Carefully tuned incentive structure for optimal behavior
+- **Exploration-Exploitation Balance**: Epsilon-greedy with learning progression
+
+### ✅ **Seamless Unity Integration**
+- **RESTful API Architecture**: Production-ready Flask server with comprehensive endpoints
+- **Real-Time Data Streaming**: Live simulation state updates for Unity consumption
+- **CORS Support**: Full WebGL compatibility for browser-based Unity applications
+- **Health Monitoring**: Robust error handling and server status reporting
+
+### ✅ **Comprehensive Visualization System**
+- **Multi-Panel Analytics**: Performance metrics, learning curves, spatial analysis
+- **Animated Simulations**: Real-time agent movement and interaction visualization
+- **Export Capabilities**: High-quality PNG, GIF, and interactive plot generation
+- **Customizable Views**: Configurable visualization parameters and styling
+
+### ✅ **Production-Ready Coordinate System**
+- **Universal Coordinate Transformation**: Seamless JSON-to-grid mapping
+- **Boundary Validation**: Robust position checking with fallback mechanisms
+- **Multi-Scale Support**: Handles diverse coordinate ranges and grid sizes
+- **Error-Free Operation**: Eliminated coordinate-related warnings and issues
+
+## 🌐 **API Documentation**
+
+### **🚀 Quick API Server Setup**
 ```bash
 # Start the API server for Unity integration
 cd scripts
-python tidymesh_api_server.py
+python tidymesh_api_server_v2.py
+
+# Server starts on http://localhost:5000
+# Comprehensive logging and status monitoring included
 ```
 
-The server will start on `http://localhost:5000` with comprehensive logging and status information.
+### **� Complete API Endpoints**
 
-### **🔗 API Endpoints**
+| Endpoint | Method | Purpose | Response Format |
+|----------|--------|---------|-----------------|
+| `/` | GET | API information & documentation | JSON metadata |
+| `/health` | GET | Server health & file status | JSON health data |
+| `/status` | GET | Detailed server status | JSON status info |
+| `/TidyMesh/Sim/v2/mas_final_state.json` | GET/POST | Final simulation state | Complete agent states |
+| `/TidyMesh/Sim/v2/simulation_history.json` | GET/POST | Step-by-step history | Temporal simulation data |
+| `/TidyMesh/Sim/v2/run` | POST | Start new simulation | Run status & parameters |
+| `/TidyMesh/Sim/v2/run/status` | GET | Current run status | Execution progress |
+| `/TidyMesh/Sim/v2/config/<file>` | GET | Configuration files | JSON config data |
+| `/TidyMesh/Sim/v2/visualization/<file>` | GET | Visualization files | Images/animations |
 
-| Endpoint | Method | Purpose | Unity Usage |
-|----------|--------|---------|-------------|
-| `/` | GET | API documentation | Server info |
-| `/health` | GET | Health check | System status |
-| `/status` | GET | Server status | File status |
-| `/TidyMesh/Sim/v2/mas_final_state.json` | GET/POST | Final simulation state | Agent positions, stats |
-| `/TidyMesh/Sim/v2/simulation_history.json` | GET/POST | Complete simulation history | Step-by-step animation |
+### **🔗 Unity Integration Features**
+```csharp
+// Unity integration capabilities:
+✅ CORS Enabled           - Full Unity WebGL support
+✅ JSON Format            - Direct Unity JsonUtility compatibility  
+✅ Real-Time Data         - Live simulation data access
+✅ File Serving           - Static asset delivery
+✅ Error Handling         - Comprehensive status codes
+✅ Caching System         - Performance optimization
+✅ Thread Safety          - Concurrent request handling
+```
 
-### **🎮 Unity Integration Features**
+### **📋 API Usage Examples**
+```bash
+# Test server health
+curl http://localhost:5000/health
 
-- **✅ CORS Enabled:** Full Unity WebGL support
-- **✅ JSON Format:** Direct Unity JsonUtility compatibility
-- **✅ Real-Time Data:** Live simulation data access
-- **✅ Caching:** Improved performance with file modification checking
-- **✅ Error Handling:** Comprehensive error messages and status codes
+# Get final simulation state  
+curl http://localhost:5000/TidyMesh/Sim/v2/mas_final_state.json
 
-### **📊 Enhanced Multi-Layered Q-Learning Support**
+# Start new simulation with parameters
+curl -X POST http://localhost:5000/TidyMesh/Sim/v2/run \
+  -H "Content-Type: application/json" \
+  -d '{"n_trucks": 8, "n_bins": 15, "steps": 50000}'
 
-The API provides access to:
-- **3 Specialized Q-Tables:** Navigation, Exploration, Emergency
-- **12-Dimensional State Space:** Comprehensive environmental awareness
-- **Zero Coordinate Errors:** Perfect JSON-to-grid transformation
-- **Performance Metrics:** Real-time bin completion tracking
+# Check simulation status
+curl http://localhost:5000/TidyMesh/Sim/v2/run/status
+```
 
-**Complete Unity Integration Guide:** [`documentation/TidyMesh_API_Unity_Guide.md`](documentation/TidyMesh_API_Unity_Guide.md)
+**📚 Complete Integration Guide:** [`documentation/TidyMesh_API_Unity_Guide.md`](documentation/TidyMesh_API_Unity_Guide.md)
 
-## 📝 **License**
+## � **Troubleshooting & Support**
 
-Academic project for Multi-Agent Computer Graphics course.
+### **🚨 Common Issues & Solutions**
 
-## 👨‍💻 **Authors**
+#### **Simulation Performance**
+```python
+# Issue: Slow simulation execution
+# Solution: Reduce simulation complexity
+params = {
+    "n_trucks": 5,        # Reduce from default 15
+    "n_bins": 8,          # Reduce from default 10  
+    "steps": 25000,       # Reduce from default 100000
+    "n_obstacles": 3      # Reduce moving obstacles
+}
+```
 
-Santiago & Enhanced Development Team  
-Universidad - 5th Semester  
-Multi-Agent Computer Graphics Course
+#### **API Connection Issues**
+```bash
+# Issue: Unity can't connect to API
+# Solution: Check server status and port availability
 
-**Enhanced Version 2.0** - August 2025
+# 1. Verify server is running
+curl http://localhost:5000/health
+
+# 2. Check port availability  
+netstat -an | findstr :5000
+
+# 3. Restart server with debug mode
+python tidymesh_api_server_v2.py --debug --port 5000
+```
+
+#### **Coordinate Transformation Problems**
+```python
+# Issue: Agents appearing outside grid bounds
+# Solution: Verify coordinate transformation parameters
+
+# Check current offsets match your data
+coord_offset_x = 260  # For JSON X range [-260, +200]
+coord_offset_z = 120  # For JSON Z range [-120, +280]
+
+# Validate positions before use
+def validate_position(x, z, width=500, height=400):
+    if not (0 <= x < width and 0 <= z < height):
+        print(f"Warning: Position ({x}, {z}) outside bounds")
+        return False
+    return True
+```
+
+### **💡 Performance Optimization Tips**
+- Use smaller grid sizes for faster execution
+- Reduce the number of agents for initial testing
+- Enable visualization only when needed (affects performance)
+- Monitor memory usage with large simulation datasets
+- Use background mode for long-running simulations
+
+### **📞 Support Resources**
+- **Documentation**: `documentation/` folder for detailed guides
+- **API Reference**: `TidyMesh_API_Endpoints.md` for complete endpoint list
+- **Code Examples**: `scripts/test_api_client.py` for API usage examples
+- **Debugging Tools**: `scripts/debug_history.py` for simulation analysis
+
+---
+
+## 📝 **License & Academic Information**
+
+### **📚 Academic Project**
+This is an academic project for the **Multi-Agent Computer Graphics** course at Universidad.
+
+### **🎓 Course Information**
+- **Institution**: Universidad  
+- **Semester**: 5th Semester (Quinto Semestre)
+- **Course**: Multi-Agent Computer Graphics (MultiAgentsComputerGraphics)
+- **Project**: Advanced Multi-Agent Waste Collection Simulation
+- **Development Period**: 2025
+
+### **👥 Development Team**
+- **Santiago Quintana Moreno** - A01571222
+- **Sergio Rodríguez Pérez** - A00838856  
+- **Rodrigo González de la Garza** - A00838952
+- **Diego Gaitan Sanchez** - A01285960
+- **Miguel Ángel Álvarez Hermida** - A01722925
+
+### **🏢 Project Sponsor**
+**NDS Cognitive Labs Mexico**
+
+### **📄 Copyright Notice**
+```
+COPYRIGHT 2025 TIDYMESH INC. ALL RIGHTS RESERVED.
+
+This project is developed for academic purposes as part of the 
+Multi-Agent Computer Graphics course curriculum. 
+
+All code, documentation, and associated materials are protected 
+under academic use guidelines and copyright law.
+```
+
+### **📈 Version History**
+- **v1.0** - Initial multi-agent simulation implementation
+- **v2.0** - Enhanced Q-Learning, API integration, Unity support
+- **Current** - Production-ready simulation with comprehensive documentation
+
+---
+
+## 🚀 **Get Started Today!**
+
+```bash
+# Clone and run in 3 simple steps:
+git clone <repository-url>
+cd TidyMesh_Sim  
+python TidyMesh_Sim_v2.py
+
+# 🎉 Watch intelligent agents learn and collaborate!
+```
+
+**For questions, issues, or contributions, please refer to the comprehensive documentation in the `/documentation` folder.**
+
+### **📞 Support Resources**
+- **Documentation**: `documentation/` folder for detailed guides
+- **API Reference**: `TidyMesh_API_Endpoints.md` for complete endpoint list
+- **Code Examples**: `scripts/test_api_client.py` for API usage examples
+- **Debugging Tools**: `scripts/debug_history.py` for simulation analysis
